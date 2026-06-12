@@ -1,6 +1,6 @@
 # ⚽ FIFA 2026 World Cup — 3rd Place Tracker
 
-**Live tool:** https://YOUR-USERNAME.github.io/fifa2026-tracker/
+**Live tool:** 
 
 A browser-based tool to analyze which third-placed teams advance to the Round of 32 at the 2026 FIFA World Cup. No installation required — runs entirely in the browser.
 
@@ -17,7 +17,7 @@ A browser-based tool to analyze which third-placed teams advance to the Round of
 
 ## How to use
 
-Just open the [live page](https://YOUR-USERNAME.github.io/fifa2026-tracker/) in any modern browser — no download, no server, no Python needed.
+Just open the [live page]() in any modern browser.
 
 1. Enter scores for the matches you want to analyze (at minimum, both matchday 1 and 2 games for one group)
 2. Click **Run Analysis**
@@ -50,4 +50,4 @@ Just open the [live page](https://YOUR-USERNAME.github.io/fifa2026-tracker/) in 
 
 ## Credits
 
-Built for tracking the 2026 FIFA World Cup group stage. Teams and schedule based on the official FIFA 2026 draw.
+Built for tracking the 2026 FIFA World Cup group stage. Teams and schedule based on the official FIFA World Cup 2026 draw.
