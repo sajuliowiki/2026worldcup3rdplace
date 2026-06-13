@@ -22,7 +22,7 @@ function buildGroups(){
           <td class="sp">–</td>
           <td><input type="number" class="si" id="ag_${id}" min="0" max="99" placeholder="–" oninput="updateStandings('${gr}')"></td>
           <td class="tn" title="${t[m[1]].name}">${t[m[1]].flag} ${t[m[1]].name}</td>
-          <td><span class="yc" title="Conduct points"></span></td>
+          <td><span class="yc" title="Conduct points"><svg width="8" height="11" viewBox="0 0 8 11" style="display:block"><polygon points="0,0 8,0 8,11 0,11" fill="#ef4444"/><polygon points="0,0 8,0 0,11" fill="#eab308"/></svg></span></td>
           <td><input type="number" class="ci" id="hc_${id}" min="0" max="99" value="0" oninput="updateStandings('${gr}')"></td>
           <td><input type="number" class="ci" id="ac_${id}" min="0" max="99" value="0" oninput="updateStandings('${gr}')"></td>
         </tr>`;
