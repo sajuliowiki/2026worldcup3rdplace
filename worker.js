@@ -376,15 +376,47 @@ function getSubsets(arr, k) {
   return result;
 }
 
-// Combine each group's advancement status with each team's possible
-// group positions to produce a per-team "has advanced / eliminated /
-// undecided" verdict (used mainly by WDL mode, where a team can clinch
-// by securing a top-2 finish well before any group is decided).
-function buildTeamStatusFromPositions(groupPositions, groupStatus) {
+// Per-team third-place route verdict for WDL mode.
+// Goal difference is unbounded, so two third-placed teams level on points
+// could rank either way. A candidate third-placed team T (worst-when-3rd
+// points = w, best = b) is therefore:
+//   - guaranteed a TOP-8 third place  iff at most 7 OTHER groups can field a
+//     third-placed team reaching >= w points (8+ such groups could bury T);
+//   - guaranteed a BOTTOM-4 third place iff at least 8 OTHER groups are forced
+//     above T even at its best (their minimum third-place points exceed b).
+// This resolves individual teams against the whole field without enumerating
+// the cross-group product — it's O(teams x 12).
+function computeThirdRouteWDL(groupCandidates) {
+  const maxThird = {}, minThird = {};
+  for (const g of GROUPS) {
+    const cands = groupCandidates[g] || [];
+    let mx = -Infinity, mn = Infinity;
+    for (const c of cands) { if (c.best.pts > mx) mx = c.best.pts; if (c.worst.pts < mn) mn = c.worst.pts; }
+    if (cands.length === 0) { mx = 9; mn = 0; }
+    maxThird[g] = mx; minThird[g] = mn;
+  }
+  const route = {};
+  for (const g of GROUPS) {
+    for (const c of (groupCandidates[g] || [])) {
+      const w = c.worst.pts, b = c.best.pts;
+      let threats = 0, forcedAbove = 0;
+      for (const h of GROUPS) {
+        if (h === g) continue;
+        if (maxThird[h] >= w) threats++;
+        if (minThird[h] > b) forcedAbove++;
+      }
+      route[c.name] = { gtop8: threats <= 7, gbottom4: forcedAbove >= 8 };
+    }
+  }
+  return route;
+}
+
+// Combine each team's possible group positions with the per-team third-place
+// route verdict to produce a "has advanced / eliminated / undecided" status.
+function buildTeamStatusWDL(groupPositions, thirdRoute) {
   const status = {};
   for (const g of GROUPS) {
     const gp = groupPositions[g] || {};
-    const gst = groupStatus[g];
     for (const t of TEAMS[g]) {
       const P = gp[t.name] || [1, 2, 3, 4];
       const has = p => P.indexOf(p) !== -1;
@@ -393,11 +425,12 @@ function buildTeamStatusFromPositions(groupPositions, groupStatus) {
       const canFourth = has(4);
       const onlyTop2 = !canThird && !canFourth;      // P subset {1,2}
       const onlyFourth = P.length === 1 && P[0] === 4;
+      const r = thirdRoute[t.name] || { gtop8: false, gbottom4: false };
 
-      if (onlyTop2) status[t.name] = 'GUARANTEED_TOP8';                                  // clinched a top-2 finish
-      else if (onlyFourth) status[t.name] = 'GUARANTEED_BOTTOM4';                        // can only finish 4th
-      else if (!canFourth && canThird && gst === 'GUARANTEED_TOP8') status[t.name] = 'GUARANTEED_TOP8';
-      else if (!top2 && (!canThird || gst === 'GUARANTEED_BOTTOM4')) status[t.name] = 'GUARANTEED_BOTTOM4';
+      if (onlyTop2) status[t.name] = 'GUARANTEED_TOP8';                       // clinched a top-2 finish
+      else if (onlyFourth) status[t.name] = 'GUARANTEED_BOTTOM4';             // can only finish 4th
+      else if (!canFourth && r.gtop8) status[t.name] = 'GUARANTEED_TOP8';     // never 4th, and any 3rd is top-8
+      else if (!top2 && r.gbottom4) status[t.name] = 'GUARANTEED_BOTTOM4';    // never top-2, and any 3rd is bottom-4
       else status[t.name] = 'TBD';
     }
   }
@@ -556,9 +589,9 @@ self.onmessage = function(e) {
     const wdl = analyzeAllWDL(groupCandidates);
     possibleCombos = wdl.possibleCombos;
     groupStatus = wdl.groupStatus;
-    // Fold in top-2 clinches so teams that have mathematically advanced
-    // (no way to be a bottom-four third place) are flagged.
-    teamStatus = buildTeamStatusFromPositions(groupPositions, groupStatus);
+    // Resolve each individual team against the whole third-place field.
+    const thirdRoute = computeThirdRouteWDL(groupCandidates);
+    teamStatus = buildTeamStatusWDL(groupPositions, thirdRoute);
   } else {
     const analysis = analyzeAll(groupCandidates);
     possibleCombos = analysis.possibleCombos;

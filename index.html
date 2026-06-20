@@ -136,7 +136,7 @@ header p{color:var(--t3);font-size:12px}
 <label><input type="checkbox" id="lock"> Lock Matchdays 1 &amp; 2</label>
 <span class="modesel" title="Full scorelines simulates every possible MD3 result (needs ≥1 MD3 game played). Win/Draw/Loss only simulates match outcomes — fast, works from Matchday 2 onward, best for spotting teams that have already advanced.">
 <label><input type="radio" name="simMode" value="regular" checked> Full scorelines</label>
-<label><input type="radio" name="simMode" value="wdl"> Win/Draw/Loss (fast)</label>
+<label><input type="radio" name="simMode" value="wdl"> Win/Draw/Loss (fast, for use on MD2)</label>
 </span>
 <button class="btn bp" id="runBtn" onclick="run()">▶ Run Analysis</button>
 <button class="btn bs" onclick="clearAll()">Clear All</button>
@@ -150,15 +150,17 @@ header p{color:var(--t3);font-size:12px}
 <div class="tool-row">
 <label>Mode:
 <select id="rngMode">
-<option value="md12">Matchdays 1 &amp; 2 only</option>
-<option value="all">All 3 matchdays</option>
+<option value="md1">Matchday 1 only</option>
+<option value="md1plus">MD 1 + some MD2 groups</option>
+<option value="md12" selected>Matchdays 1 &amp; 2 only</option>
 <option value="md12plus">MD 1&amp;2 + some MD3 groups</option>
+<option value="all">All 3 matchdays</option>
 </select>
 </label>
 </div>
 <div class="tool-row" id="rngCountRow" style="display:none">
-<label>MD3 groups to fill (1–11):
-<input type="number" id="rngCount" min="1" max="11" value="4" style="width:50px">
+<label><span id="rngCountLabel">MD3 groups to fill</span> (1–12):
+<input type="number" id="rngCount" min="1" max="12" value="4" style="width:50px">
 </label>
 </div>
 <div class="tool-row">
@@ -212,6 +214,7 @@ header p{color:var(--t3);font-size:12px}
 </div>
 <script src="standings.js"></script>
 <script src="combo-matrix.js"></script>
+<script src="prefill.js"></script>
 <script src="app.js"></script>
 <script src="wiki.js"></script>
 </body>

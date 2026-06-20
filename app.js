@@ -333,9 +333,13 @@ function togPanel(id){
   else{body.classList.add('open');arrow.classList.add('op');}
 }
 
-// Show/hide MD3 count row based on mode
+// Show/hide the group-count row and relabel it based on mode
 document.getElementById('rngMode').addEventListener('change',function(){
-  document.getElementById('rngCountRow').style.display=this.value==='md12plus'?'flex':'none';
+  const m=this.value;
+  const show=(m==='md12plus'||m==='md1plus');
+  document.getElementById('rngCountRow').style.display=show?'flex':'none';
+  const lbl=document.getElementById('rngCountLabel');
+  if(lbl)lbl.textContent=m==='md1plus'?'MD2 groups to fill':'MD3 groups to fill';
 });
 
 // ========== RANDOM SCORE GENERATOR ==========
@@ -355,21 +359,28 @@ function randomConduct(){
 }
 function generateRandom(){
   const mode=document.getElementById('rngMode').value;
-  let md3Count=0;
-  if(mode==='md12plus')md3Count=Math.max(1,Math.min(11,parseInt(document.getElementById('rngCount').value)||4));
-  const md3Groups=new Set();
-  if(mode==='all'){GROUPS.forEach(g=>md3Groups.add(g));}
-  else if(mode==='md12plus'){const shuffled=[...GROUPS].sort(()=>Math.random()-0.5);for(let i=0;i<md3Count;i++)md3Groups.add(shuffled[i]);}
+  const countVal=Math.max(1,Math.min(12,parseInt(document.getElementById('rngCount').value)||4));
+  const randomSubset=n=>new Set([...GROUPS].sort(()=>Math.random()-0.5).slice(0,n));
 
+  // For each group, decide which matchdays to fill
+  const fillMD={};GROUPS.forEach(g=>fillMD[g]=new Set());
+  if(mode==='md1'){GROUPS.forEach(g=>fillMD[g].add(1));}
+  else if(mode==='md1plus'){const md2g=randomSubset(countVal);GROUPS.forEach(g=>{fillMD[g].add(1);if(md2g.has(g))fillMD[g].add(2);});}
+  else if(mode==='md12'){GROUPS.forEach(g=>{fillMD[g].add(1);fillMD[g].add(2);});}
+  else if(mode==='md12plus'){const md3g=randomSubset(countVal);GROUPS.forEach(g=>{fillMD[g].add(1);fillMD[g].add(2);if(md3g.has(g))fillMD[g].add(3);});}
+  else if(mode==='all'){GROUPS.forEach(g=>{fillMD[g].add(1);fillMD[g].add(2);fillMD[g].add(3);});}
+
+  // Clear every unlocked box first, then fill the selected matchdays — so the
+  // result reflects exactly the chosen scope (e.g. "MD1 only" leaves MD2/3 empty).
   for(const gr of GROUPS){
     for(let md=1;md<=3;md++){
-      if(md<=2||md3Groups.has(gr)){
-        SCHED[md].forEach((_,mi)=>{
-          const id=`${gr}_${md}_${mi}`;
-          const hgEl=document.getElementById('hg_'+id),agEl=document.getElementById('ag_'+id),hcEl=document.getElementById('hc_'+id),acEl=document.getElementById('ac_'+id);
-          if(!hgEl.disabled){hgEl.value=weightedRandomScore();agEl.value=weightedRandomScore();hcEl.value=randomConduct();acEl.value=randomConduct();}
-        });
-      }
+      SCHED[md].forEach((_,mi)=>{
+        const id=`${gr}_${md}_${mi}`;
+        const hgEl=document.getElementById('hg_'+id),agEl=document.getElementById('ag_'+id),hcEl=document.getElementById('hc_'+id),acEl=document.getElementById('ac_'+id);
+        if(hgEl.disabled)return; // locked MD1&2 untouched
+        if(fillMD[gr].has(md)){hgEl.value=weightedRandomScore();agEl.value=weightedRandomScore();hcEl.value=randomConduct();acEl.value=randomConduct();}
+        else{hgEl.value='';agEl.value='';hcEl.value='0';acEl.value='0';}
+      });
     }
   }
   invalidateAnalysis();
@@ -392,11 +403,8 @@ function exportData(){
   }
   document.getElementById('exportBox').value=JSON.stringify(data,null,2);
 }
-function importData(){
-  const text=document.getElementById('exportBox').value.trim();
-  if(!text){alert('Paste data into the text box first.');return;}
-  let data;
-  try{data=JSON.parse(text);}catch(e){alert('Invalid data format. Must be valid JSON.');return;}
+// Apply a data object (export/import JSON shape) to the input boxes.
+function applyData(data){
   for(const gr of GROUPS){
     if(!data[gr])continue;
     for(let md=1;md<=3;md++){
@@ -414,6 +422,24 @@ function importData(){
   GROUPS.forEach(renderGroupStandings);
   renderLive3rdPlace();
 }
+function importData(){
+  const text=document.getElementById('exportBox').value.trim();
+  if(!text){alert('Paste data into the text box first.');return;}
+  let data;
+  try{data=JSON.parse(text);}catch(e){alert('Invalid data format. Must be valid JSON.');return;}
+  applyData(data);
+}
+
+// Pre-fill results from prefill.js (PREFILL_DATA), if present. Runs after all
+// scripts have loaded so the live-render helpers in wiki.js are available.
+// "Clear All" wipes these just like any other entered scores.
+window.addEventListener('load',function(){
+  try{
+    if(typeof PREFILL_DATA!=='undefined' && PREFILL_DATA && Object.keys(PREFILL_DATA).length){
+      applyData(PREFILL_DATA);
+    }
+  }catch(e){console.error('Prefill failed:',e);}
+});
 function downloadData(){
   exportData();
   const text=document.getElementById('exportBox').value;
