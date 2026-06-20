@@ -116,6 +116,13 @@ header p{color:var(--t3);font-size:12px}
 .tool-row select,.tool-row input[type=number]{padding:4px 6px;border-radius:4px;border:1px solid var(--bd);background:var(--bg);color:var(--t1);font-family:inherit;font-size:12px}
 .tool-row select{min-width:100px}
 .export-box{width:100%;min-height:60px;max-height:200px;padding:6px;border-radius:4px;border:1px solid var(--bd);background:var(--bg);color:var(--t1);font-family:'JetBrains Mono',monospace;font-size:10px;resize:vertical;margin-top:6px}
+.poscol{font-size:9px;font-weight:600;white-space:nowrap}
+.modesel{display:flex;align-items:center;gap:10px;border-left:1px solid var(--bd);padding-left:10px}
+.modesel label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t2);cursor:pointer}
+.modesel input[type=radio]{accent-color:var(--blu);width:14px;height:14px}
+/* Sections that only make sense after Run Analysis are hidden until then */
+.aonly{display:none}
+#res.analyzed .aonly{display:block}
 
 </style>
 </head>
@@ -127,6 +134,10 @@ header p{color:var(--t3);font-size:12px}
 </header>
 <div class="ctrl">
 <label><input type="checkbox" id="lock"> Lock Matchdays 1 &amp; 2</label>
+<span class="modesel" title="Full scorelines simulates every possible MD3 result (needs ≥1 MD3 game played). Win/Draw/Loss only simulates match outcomes — fast, works from Matchday 2 onward, best for spotting teams that have already advanced.">
+<label><input type="radio" name="simMode" value="regular" checked> Full scorelines</label>
+<label><input type="radio" name="simMode" value="wdl"> Win/Draw/Loss (fast)</label>
+</span>
 <button class="btn bp" id="runBtn" onclick="run()">▶ Run Analysis</button>
 <button class="btn bs" onclick="clearAll()">Clear All</button>
 </div>
@@ -172,12 +183,12 @@ header p{color:var(--t3);font-size:12px}
 
 <div class="gg" id="gg"></div>
 <div id="res">
-<div class="ss"><h2>Group Status Summary</h2><div class="sg" id="sgrid"></div></div>
+<div class="ss aonly"><h2>Group Status Summary</h2><div class="sg" id="sgrid"></div></div>
 <div class="ms"><h2>Live 3rd-Place Rankings</h2><div id="live3rdPlace"></div></div>
-<div class="ms"><h2>Possible R32 Opponents — 1st Place Teams</h2><table class="mt" id="fp"></table></div>
-<div class="ms"><h2>Possible R32 Opponents — Advancing 3rd Place Teams</h2><table class="mt" id="tp"></table></div>
-<div class="ms"><h2>Live Round of 32 Pairings</h2><div id="r32pairings" class="r32-container"></div></div>
-<div class="ms"><h2 class="mth" onclick="togMx()"><span class="ar" id="mxa">▶</span> Full 495 Combination Matrix</h2><div id="mxw" class="mw" style="display:none"></div></div>
+<div class="ms aonly"><h2>Possible R32 Opponents — 1st Place Teams</h2><table class="mt" id="fp"></table></div>
+<div class="ms aonly"><h2>Possible R32 Opponents — Advancing 3rd Place Teams</h2><table class="mt" id="tp"></table></div>
+<div class="ms aonly"><h2>Live Round of 32 Pairings</h2><div id="r32pairings" class="r32-container"></div></div>
+<div class="ms aonly"><h2 class="mth" onclick="togMx()"><span class="ar" id="mxa">▶</span> Full 495 Combination Matrix</h2><div id="mxw" class="mw" style="display:none"></div></div>
 
 <div class="ms">
 <h2 class="mth" onclick="togPanel('wiki')"><span class="ar" id="wiki_ar">▶</span> 📋 Wikipedia Wikitext Export</h2>

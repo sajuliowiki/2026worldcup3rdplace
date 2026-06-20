@@ -1,4 +1,7 @@
-// wiki.js — Wikipedia Wikitext Generation for FIFA 2026 3rd Place Tracker (v3.1)
+// wiki.js — Wikipedia Wikitext Generation for FIFA 2026 3rd Place Tracker (v4.0)
+// v4.0: fills confirmed teams as soon as a group POSITION is secured
+// (not only when every group match is played); FIFA-ranking column in
+// the live 3rd-place table; mode-aware best/worst summary.
 
 // =====================================================================
 // FIFA 3-LETTER CODES
@@ -18,6 +21,10 @@ const FIFA_CODES={
   "England":"ENG","Croatia":"CRO","Ghana":"GHA","Panama":"PAN"
 };
 
+// Secured-position map {group:{1:name,2:name,3:name,4:name}} set by the
+// app before any wiki/R32 generation. Drives confirmed team fill-ins.
+var _securedPos={};
+
 // ========== STANDINGS CACHE ==========
 function computeStandingsCache(completeness) {
   const cache = {};
@@ -31,7 +38,6 @@ function computeStandingsCache(completeness) {
     for (const grp of ranking) {
       for (const idx of grp) {
         pos++;
-        // Compute W/D/L
         let w=0,d=0,l=0;
         for (const m of matches) {
           if (m.home===idx) { if(m.hg>m.ag)w++; else if(m.hg===m.ag)d++; else l++; }
@@ -56,34 +62,39 @@ function getSlotPossible(pSet) {
   return sp;
 }
 
+// Resolve a fixture slot to a confirmed team (when its group position is
+// secured) or a placeholder. Confirmation no longer requires the whole
+// group to be finished — only that the relevant position is mathematically
+// locked, and (for 3rd) that the slot has a single possible group.
 function resolveTeamWiki(desc, slot, slotPossible, standingsCache, completeness, forTeam2) {
   const fbTag = forTeam2 ? 'fb' : 'fb-rt';
+  const sec = _securedPos || {};
+
+  function fill(name) {
+    const code = FIFA_CODES[name] || 'CODE';
+    return {wiki:`{{#invoke:flag|${fbTag}|${code}}}`, plain:name, confirmed:true};
+  }
+
   if (desc === '3rd') {
     const possible = slotPossible[slot] ? [...slotPossible[slot]].sort() : [];
     if (possible.length === 1) {
       const grpLetter = possible[0].replace('3','');
-      const team = standingsCache[grpLetter] ? standingsCache[grpLetter][2] : null;
-      if (team && completeness[grpLetter]) {
-        const code = FIFA_CODES[team.name]||'CODE';
-        return {wiki:`{{#invoke:flag|${fbTag}|${code}}}`, plain:team.name, confirmed:true};
-      }
+      const secName = sec[grpLetter] ? sec[grpLetter][3] : null;
+      if (secName) return fill(secName); // 3rd secured AND only one possible fixture
     }
     const grps = possible.map(p=>p.replace('3','')).join('/');
     return {wiki:`<!--{{#invoke:flag|${fbTag}|}}-->3rd Group ${grps}`, plain:`3rd Group ${grps}`, confirmed:false};
   }
+
   const pos = parseInt(desc[0]), grp = desc[1];
   const posLabel = pos===1?'Winner':'Runner-up';
-  const team = standingsCache[grp] ? standingsCache[grp][pos-1] : null;
-  if (team && completeness[grp]) {
-    const code = FIFA_CODES[team.name]||'CODE';
-    return {wiki:`{{#invoke:flag|${fbTag}|${code}}}`, plain:team.name, confirmed:true};
-  }
+  const secName = sec[grp] ? sec[grp][pos] : null;
+  if (secName) return fill(secName); // winner / runner-up secured
   return {wiki:`<!--{{#invoke:flag|${fbTag}|}}-->${posLabel} Group ${grp}`, plain:`${posLabel} Group ${grp}`, confirmed:false};
 }
 
 // ========== LIVE 3RD-PLACE STANDINGS TABLE ==========
 function buildLive3rdPlaceTable(standingsCache, groupStatus, completeness) {
-  // Collect 3rd place teams from each group
   const entries = [];
   for (const g of GROUPS) {
     const sc = standingsCache[g];
@@ -91,11 +102,10 @@ function buildLive3rdPlaceTable(standingsCache, groupStatus, completeness) {
       entries.push({group:g, name:'—', flag:'', code:'', w:0, d:0, l:0, gf:0, ga:0, gd:0, pts:0, conduct:0, fifaRank:999, status:groupStatus?groupStatus[g]:''});
       continue;
     }
-    const t = sc[2]; // 3rd place (0-indexed)
+    const t = sc[2];
     entries.push({group:g, name:t.name, flag:t.flag, code:FIFA_CODES[t.name]||'?', w:t.w, d:t.d, l:t.l, gf:t.gf, ga:t.ga, gd:t.gd, pts:t.pts, conduct:t.conduct, fifaRank:t.fifaRank, status:groupStatus?groupStatus[g]:''});
   }
 
-  // Sort by 3rd-place ranking tiebreakers: pts > gd > gf > conduct(lower better) > fifaRank(lower better)
   entries.sort((a,b) => {
     if (a.pts!==b.pts) return b.pts-a.pts;
     if (a.gd!==b.gd) return b.gd-a.gd;
@@ -104,16 +114,42 @@ function buildLive3rdPlaceTable(standingsCache, groupStatus, completeness) {
     return a.fifaRank-b.fifaRank;
   });
 
-  let h = '<table class="tpt"><tr><th>#</th><th>Grp</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th title="Team Conduct">TC</th><th>Status</th></tr>';
+  let h = '<table class="tpt"><tr><th>#</th><th>Grp</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th title="Team Conduct">TC</th><th title="FIFA ranking">FIFA</th><th>Status</th></tr>';
   entries.forEach((e, i) => {
     const mp = e.w + e.d + e.l;
-    const st = e.status==='GUARANTEED_TOP8'?'✓ Advance':e.status==='GUARANTEED_BOTTOM4'?'✗ Eliminated':'';
+    const st = e.status==='GUARANTEED_TOP8'?'\u2713 Advance':e.status==='GUARANTEED_BOTTOM4'?'\u2717 Eliminated':'';
     const stCol = e.status==='GUARANTEED_TOP8'?'var(--grn)':e.status==='GUARANTEED_BOTTOM4'?'var(--red)':'';
     const rowCls = i < 8 ? ' class="tpt-adv"' : '';
-    h += `<tr${rowCls}><td>${i+1}</td><td>${e.group}</td><td class="stm">${e.flag} ${e.name}</td><td>${mp}</td><td>${e.w}</td><td>${e.d}</td><td>${e.l}</td><td>${e.gf}</td><td>${e.ga}</td><td>${e.gd>=0?'+':''}${e.gd}</td><td><strong>${e.pts}</strong></td><td>${e.conduct}</td><td style="color:${stCol};font-size:10px;font-weight:600">${st}</td></tr>`;
+    h += `<tr${rowCls}><td>${i+1}</td><td>${e.group}</td><td class="stm">${e.flag} ${e.name}</td><td>${mp}</td><td>${e.w}</td><td>${e.d}</td><td>${e.l}</td><td>${e.gf}</td><td>${e.ga}</td><td>${e.gd>=0?'+':''}${e.gd}</td><td><strong>${e.pts}</strong></td><td>${e.conduct}</td><td>${e.fifaRank}</td><td style="color:${stCol};font-size:10px;font-weight:600">${st}</td></tr>`;
   });
   h += '</table>';
   return {html: h, sortedEntries: entries};
+}
+
+// ========== BEST/WORST SUMMARY (mode-aware) ==========
+function buildBestWorstSummary(candidates, mode) {
+  const isWDL = mode==='wdl';
+  const fgd=v=>v>40?'\u221e':v<-40?'-\u221e':(v>=0?'+':'')+v;
+  const fgf=v=>v>40?'\u221e':''+v;
+  const fmt=s=> isWDL ? `${s.pts}p` : `${s.pts}p ${fgd(s.gd)}gd ${fgf(s.gf)}gf`;
+
+  let h='<div style="margin-top:10px"><table class="tpt"><tr><th>Grp</th><th>Best Result (if 3rd)</th><th>Team(s)</th><th>Worst Result (if 3rd)</th><th>Team(s)</th></tr>';
+  for(const g of GROUPS){
+    const gc=candidates?candidates[g]:null;
+    if(!gc||gc.length===0){h+=`<tr><td>${g}</td><td colspan="4" style="color:var(--t3)">No data</td></tr>`;continue;}
+    let bestStat=null,worstStat=null;
+    for(const c of gc){
+      if(!bestStat||cmpStatBW(c.best,bestStat)>0)bestStat=c.best;
+      if(!worstStat||cmpStatBW(c.worst,worstStat)<0)worstStat=c.worst;
+    }
+    const sameBest=c=> c.best.pts===bestStat.pts && (isWDL || (c.best.gd===bestStat.gd && c.best.gf===bestStat.gf));
+    const sameWorst=c=> c.worst.pts===worstStat.pts && (isWDL || (c.worst.gd===worstStat.gd && c.worst.gf===worstStat.gf));
+    const bestTeams=gc.filter(sameBest).map(c=>`${c.flag} ${c.name}`);
+    const worstTeams=gc.filter(sameWorst).map(c=>`${c.flag} ${c.name}`);
+    h+=`<tr><td>${g}</td><td style="font-family:'JetBrains Mono',monospace;font-size:10px">${fmt(bestStat)}</td><td class="stm" style="font-size:10px">${bestTeams.join(', ')}</td><td style="font-family:'JetBrains Mono',monospace;font-size:10px">${fmt(worstStat)}</td><td class="stm" style="font-size:10px">${worstTeams.join(', ')}</td></tr>`;
+  }
+  h+='</table></div>';
+  return h;
 }
 
 // ========== LIVE R32 PAIRINGS ==========
@@ -153,7 +189,6 @@ function generateThirdPlaceTableWiki(standingsCache, completeness, groupStatus) 
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const dateStr=months[today.getMonth()]+' '+today.getDate();
 
-  // Build sorted entries for team_order
   const {sortedEntries} = buildLive3rdPlaceTable(standingsCache, groupStatus, completeness);
   const teamOrder = sortedEntries.map(e=>'Gr'+e.group).join(', ');
 
@@ -231,12 +266,8 @@ function generateCombosTableWiki(pSet) {
     const possible = pSet.has(combo.groups);
     L.push(possible ? '|- style="background:#BBF3BB"' : '|-');
     L.push(`! scope="row" | ${i+1}`);
-
-    // Group cells: bold letter if in combo, empty if not
     const groupCells = GROUPS.map(g => combo.groupSet.has(g) ? `'''${g}'''` : '').join(' || ');
-    // Matchup cells
     const matchups = `${combo.matchups['1A']} || ${combo.matchups['1B']} || ${combo.matchups['1D']} || ${combo.matchups['1E']} || ${combo.matchups['1G']} || ${combo.matchups['1I']} || ${combo.matchups['1K']} || ${combo.matchups['1L']}`;
-
     if (i === 0) {
       L.push(`| ${groupCells}`.replace(/  +/g,' '));
       L.push('! rowspan="495" |');
@@ -258,7 +289,6 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
   if(typeof COMBO_MATRIX==='undefined')return'';
   const sp=getSlotPossible(pSet);
 
-  // Matches in chronological order matching the original file
   const matches=[
     {num:73,t1:"2A",t2:"2B",date:"6|28",time:'12:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'SoFi Stadium',city:'Inglewood, California|Inglewood',
      report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021518 "2A vs 2B {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
@@ -330,7 +360,6 @@ function generateBracketWiki(pSet, standingsCache, completeness) {
     return resolveTeamWiki(desc,slot,sp,standingsCache,completeness,false).wiki.replace(/fb-rt/g,'fb');
   }
 
-  // R32 bracket order (must match the original template exactly)
   const r32=[
     {t1:"1E",t2:"3rd",slot:"1E",date:"June 29",city:"Foxborough, Massachusetts|Foxborough"},
     {t1:"1I",t2:"3rd",slot:"1I",date:"June 30",city:"East Rutherford, New Jersey|East Rutherford"},
@@ -371,7 +400,6 @@ function generateBracketWiki(pSet, standingsCache, completeness) {
     L.push(`|${m.date} – [[${m.city}]]|${t1w}||${t2w}|`);
   }
 
-  // Everything below R32 stays EXACTLY as original
   L.push('<!--Round of 16-->');
   L.push('|July 4 – [[Philadelphia]]|<!--{{#invoke:flag|fb|}}-->Winner Match 74||<!--{{#invoke:flag|fb|}}-->Winner Match 77|');
   L.push('|July 4 – [[Houston]]|<!--{{#invoke:flag|fb|}}-->Winner Match 73||<!--{{#invoke:flag|fb|}}-->Winner Match 75|');
@@ -409,52 +437,27 @@ function copyWikiBox(id) {
   });
 }
 
-// ========== MAIN EXPORT ==========
+// ========== MAIN EXPORT (post-analysis full render) ==========
 function generateAllWiki() {
   if (!window._lastAnalysis) return;
-  const {possibleCombos, groupStatus, completeness, candidates} = window._lastAnalysis;
+  const {possibleCombos, groupStatus, completeness, candidates, mode} = window._lastAnalysis;
   const pSet = new Set(possibleCombos);
+  _securedPos = window._secured || {};
   const standingsCache = computeStandingsCache(completeness);
 
-  // Live 3rd-place standings
   const {html: tptHtml} = buildLive3rdPlaceTable(standingsCache, groupStatus, completeness);
-
-  // Build best/worst summary per group
-  const fgd=v=>v>40?'∞':v<-40?'-∞':(v>=0?'+':'')+v;
-  const fgf=v=>v>40?'∞':''+v;
-  let bwHtml='<div style="margin-top:10px"><table class="tpt"><tr><th>Grp</th><th>Best Result (if 3rd)</th><th>Team(s)</th><th>Worst Result (if 3rd)</th><th>Team(s)</th></tr>';
-  for(const g of GROUPS){
-    const gc=candidates?candidates[g]:null;
-    if(!gc||gc.length===0){bwHtml+=`<tr><td>${g}</td><td colspan="4" style="color:var(--t3)">No data</td></tr>`;continue;}
-
-    // Find overall best across all candidates
-    let bestStat=null,worstStat=null;
-    for(const c of gc){
-      if(!bestStat||cmpStatBW(c.best,bestStat)>0) bestStat=c.best;
-      if(!worstStat||cmpStatBW(c.worst,worstStat)<0) worstStat=c.worst;
-    }
-
-    // Find which teams achieve the best/worst
-    const bestTeams=gc.filter(c=>c.best.pts===bestStat.pts&&c.best.gd===bestStat.gd&&c.best.gf===bestStat.gf).map(c=>`${c.flag} ${c.name}`);
-    const worstTeams=gc.filter(c=>c.worst.pts===worstStat.pts&&c.worst.gd===worstStat.gd&&c.worst.gf===worstStat.gf).map(c=>`${c.flag} ${c.name}`);
-
-    bwHtml+=`<tr><td>${g}</td><td style="font-family:'JetBrains Mono',monospace;font-size:10px">${bestStat.pts}p ${fgd(bestStat.gd)}gd ${fgf(bestStat.gf)}gf</td><td class="stm" style="font-size:10px">${bestTeams.join(', ')}</td><td style="font-family:'JetBrains Mono',monospace;font-size:10px">${worstStat.pts}p ${fgd(worstStat.gd)}gd ${fgf(worstStat.gf)}gf</td><td class="stm" style="font-size:10px">${worstTeams.join(', ')}</td></tr>`;
-  }
-  bwHtml+='</table></div>';
-
+  const bwHtml = buildBestWorstSummary(candidates, mode);
   document.getElementById('live3rdPlace').innerHTML = tptHtml + bwHtml;
 
-  // Live R32 pairings
   document.getElementById('r32pairings').innerHTML = buildR32Pairings(pSet, standingsCache, completeness);
 
-  // Wikitext outputs
   document.getElementById('wikiThirdPlace').value = generateThirdPlaceTableWiki(standingsCache, completeness, groupStatus);
   document.getElementById('wikiCombos').value = generateCombosTableWiki(pSet);
   document.getElementById('wikiBoxes').value = generateFootballBoxesWiki(pSet, standingsCache, completeness);
   document.getElementById('wikiBracket').value = generateBracketWiki(pSet, standingsCache, completeness);
 }
 
-// Compare stat for best/worst (same as worker cmpStat)
+// Compare stat for best/worst (higher = better)
 function cmpStatBW(a,b){
   if(a.pts!==b.pts)return a.pts-b.pts;
   if(a.gd!==b.gd)return a.gd-b.gd;

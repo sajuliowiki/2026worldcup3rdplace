@@ -1,9 +1,10 @@
-// app.js — FIFA 2026 3rd Place Tracker UI Logic
+// app.js — FIFA 2026 3rd Place Tracker UI Logic (v5.0)
 // Data and standings engine loaded from standings.js (shared with worker.js)
 
 var SCHED = MATCH_SCHEDULE; // alias for UI code
 var SLOT_NAMES={'1A':'Mexico','1B':'Canada','1D':'United States','1E':'Germany','1G':'Belgium','1I':'France','1K':'Portugal','1L':'England'};
 var SLOTS=['1A','1B','1D','1E','1G','1I','1K','1L'];
+var POS_LABEL={1:'1st',2:'2nd',3:'3rd',4:'4th'};
 
 // ========== BUILD GROUP INPUTS ==========
 function buildGroups(){
@@ -47,21 +48,98 @@ function getGroupMatches(gr){
   return matches;
 }
 
-function updateStandings(gr){
+// Format a team's possible finishing positions for the group table.
+// One position  -> "1st ✓" (locked, green).  Several -> "2nd/3rd/4th" (amber).
+function formatPositions(arr){
+  if(!arr||!arr.length)return null;
+  const sorted=[...arr].sort((a,b)=>a-b);
+  if(sorted.length===1)return{text:POS_LABEL[sorted[0]]+' \u2713',locked:true};
+  return{text:sorted.map(p=>POS_LABEL[p]).join('/'),locked:false};
+}
+
+// Render one group's standings table. Includes the FIFA-ranking column
+// always, and the (header-less) possible-positions column once an
+// analysis has produced position data.
+function renderGroupStandings(gr){
   const box=document.getElementById('st_'+gr),matches=getGroupMatches(gr);
   if(!matches.length){box.innerHTML='';return;}
   const stats=computeStats(gr,matches),ranking=rankGroup(stats);
   const rows=[];let pos=1;
   for(const grp of ranking){const isTied=grp.length>1;for(const idx of grp)rows.push({...stats[idx],dispPos:pos,tied:isTied});pos+=grp.length;}
 
-  let h=`<table class="stbl"><tr><th>#</th><th>Team</th><th>MP</th><th>Pts</th><th>GD</th><th>GF</th><th>GA</th><th title="Conduct">C</th></tr>`;
+  const positions=window._lastPositions?window._lastPositions[gr]:null;
+  const showPos=!!positions;
+
+  let h=`<table class="stbl"><tr><th>#</th><th>Team</th>${showPos?'<th></th>':''}<th>MP</th><th>Pts</th><th>GD</th><th>GF</th><th>GA</th><th title="Conduct">C</th><th title="FIFA ranking">FIFA</th></tr>`;
   for(const r of rows){
     const cls=r.dispPos===3?' class="r3rd"':'';
-    h+=`<tr${cls}><td>${r.dispPos}${r.tied?'*':''}</td><td class="stm">${r.flag} ${r.name}</td><td>${r.mp}</td><td><strong>${r.pts}</strong></td><td>${r.gd>=0?'+':''}${r.gd}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.conduct}</td></tr>`;
+    let posCell='';
+    if(showPos){
+      const fp=formatPositions(positions[r.name]);
+      if(fp){const col=fp.locked?'var(--grn)':'var(--amb)';posCell=`<td class="poscol" style="color:${col}">${fp.text}</td>`;}
+      else posCell='<td class="poscol"></td>';
+    }
+    h+=`<tr${cls}><td>${r.dispPos}${r.tied?'*':''}</td><td class="stm">${r.flag} ${r.name}</td>${posCell}<td>${r.mp}</td><td><strong>${r.pts}</strong></td><td>${r.gd>=0?'+':''}${r.gd}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.conduct}</td><td>${r.fifaRank}</td></tr>`;
   }
   h+='</table>';
   if(rows.some(r=>r.tied))h+='<div class="stie">* = tied through current tiebreaker stage</div>';
   box.innerHTML=h;
+}
+
+// Input handler: any edit invalidates the previous analysis, re-renders
+// all group standings (dropping stale position columns), and refreshes
+// the live 3rd-place ranking section.
+function updateStandings(gr){
+  invalidateAnalysis();
+  for(const g of GROUPS)renderGroupStandings(g);
+  renderLive3rdPlace();
+}
+
+// Clear everything derived from a previous analysis run.
+function invalidateAnalysis(){
+  window._lastAnalysis=null;window._lastPositions=null;window._secured=null;
+  const res=document.getElementById('res');res.classList.remove('analyzed');
+  GROUPS.forEach(g=>{
+    const b=document.getElementById('b_'+g);if(b)b.style.display='none';
+    const c=document.getElementById('c_'+g);if(c)c.style.display='none';
+  });
+  ['wikiCombos','wikiBoxes','wikiBracket'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+}
+
+// ========== LIVE 3RD-PLACE SECTION (generated without running analysis) ==========
+function liveCompleteness(){
+  const comp={};
+  for(const g of GROUPS){
+    let all=true;
+    for(let md=1;md<=3;md++)SCHED[md].forEach((m,mi)=>{
+      const id=`${g}_${md}_${mi}`;
+      if(document.getElementById('hg_'+id).value===''||document.getElementById('ag_'+id).value==='')all=false;
+    });
+    comp[g]=all;
+  }
+  return comp;
+}
+
+function renderLive3rdPlace(){
+  const anyData=GROUPS.some(g=>getGroupMatches(g).length>0);
+  const res=document.getElementById('res');
+  if(!anyData){res.style.display='none';return;}
+  res.style.display='block';
+
+  if(typeof computeStandingsCache!=='function')return; // wiki.js not ready
+  const analysis=window._lastAnalysis;
+  const groupStatus=analysis?analysis.groupStatus:null;
+  const completeness=liveCompleteness();
+  const standingsCache=computeStandingsCache(completeness);
+
+  // Live ranking table (status column only filled once analysis has run)
+  const {html}=buildLive3rdPlaceTable(standingsCache,groupStatus,completeness);
+  let extra='';
+  if(analysis&&analysis.candidates)extra=buildBestWorstSummary(analysis.candidates,analysis.mode);
+  document.getElementById('live3rdPlace').innerHTML=html+extra;
+
+  // Third-place wikitext can also be produced live (status blank pre-analysis)
+  try{document.getElementById('wikiThirdPlace').value=generateThirdPlaceTableWiki(standingsCache,completeness,groupStatus);}catch(e){}
 }
 
 // ========== LOCK TOGGLE ==========
@@ -76,6 +154,7 @@ function clearAll(){
   document.querySelectorAll('.si').forEach(el=>{el.value='';el.disabled=false;});
   document.querySelectorAll('.ci').forEach(el=>{el.value='0';el.disabled=false;});
   document.getElementById('lock').checked=false;
+  invalidateAnalysis();
   document.getElementById('res').style.display='none';
   GROUPS.forEach(g=>{document.getElementById('b_'+g).style.display='none';document.getElementById('c_'+g).style.display='none';document.getElementById('st_'+g).innerHTML='';});
 }
@@ -93,15 +172,38 @@ function gather(){
   return{matchData:data,completeness:comp};
 }
 
+// Has ANY group had a result entered for the given matchday?
+function matchdayHasData(md){
+  for(const g of GROUPS)for(let mi=0;mi<SCHED[md].length;mi++){
+    const id=`${g}_${md}_${mi}`;
+    if(document.getElementById('hg_'+id).value!==''&&document.getElementById('ag_'+id).value!=='')return true;
+  }
+  return false;
+}
+
+function getMode(){
+  const el=document.querySelector('input[name="simMode"]:checked');
+  return el?el.value:'regular';
+}
+
 // ========== RUN ANALYSIS ==========
 let worker=null;
 function run(){
+  const mode=getMode();
   const{matchData,completeness}=gather();
-  let ok=false;for(const g of GROUPS)if(matchData[g].length>=4)ok=true;
-  if(!ok){alert('Enter at least Matchdays 1 & 2 for one group.');return;}
+  const anyMD2=matchdayHasData(2),anyMD3=matchdayHasData(3);
+
+  if(!anyMD2&&!anyMD3){
+    alert('Enter at least Matchday 2 results before running an analysis.\n\nWith only Matchday 1 played, nothing can be determined yet.');
+    return;
+  }
+  if(mode==='regular'&&!anyMD3){
+    alert('Full-scoreline mode needs at least one Matchday 3 result.\n\nWith only Matchdays 1 & 2 entered, switch to "Win/Draw/Loss (fast)" mode — it can still show which teams have mathematically advanced.');
+    return;
+  }
+
   document.getElementById('runBtn').disabled=true;
   document.getElementById('prog').style.display='block';
-  document.getElementById('res').style.display='none';
   if(worker)worker.terminate();
   worker=new Worker('worker.js');
   let cands=null;
@@ -112,57 +214,99 @@ function run(){
     else if(d.type==='result'){document.getElementById('runBtn').disabled=false;document.getElementById('prog').style.display='none';showResults(d.data,cands,completeness);}
   };
   worker.onerror=function(err){console.error(err);document.getElementById('runBtn').disabled=false;document.getElementById('pmsg').textContent='Error: '+err.message;};
-  worker.postMessage({type:'analyze',data:{matchData,completeness}});
+  worker.postMessage({type:'analyze',data:{matchData,completeness,mode}});
+}
+
+// ========== SECURED POSITIONS ==========
+// A position in a group is "secured" when exactly one team can ONLY
+// finish there (its set of possible positions is the singleton {p}).
+function computeSecured(groupPositions){
+  const sec={};
+  for(const g of GROUPS){
+    sec[g]={};
+    const pos=groupPositions[g]||{};
+    for(let p=1;p<=4;p++){
+      const locked=Object.keys(pos).filter(nm=>{const a=pos[nm];return a&&a.length===1&&a[0]===p;});
+      if(locked.length===1)sec[g][p]=locked[0];
+    }
+  }
+  return sec;
 }
 
 // ========== DISPLAY RESULTS ==========
 function showResults(analysis,candidates,completeness){
-  document.getElementById('res').style.display='block';
-  const{possibleCombos,groupStatus,teamStatus}=analysis;const pSet=new Set(possibleCombos);
+  const{possibleCombos,groupStatus,teamStatus,groupPositions,mode}=analysis;
+  const pSet=new Set(possibleCombos);
+  const isWDL=mode==='wdl';
 
-  // Store for wiki.js access
-  window._lastAnalysis={possibleCombos,groupStatus,teamStatus,completeness,candidates};
+  window._lastPositions=groupPositions;
+  window._secured=computeSecured(groupPositions);
+  window._lastAnalysis={possibleCombos,groupStatus,teamStatus,completeness,candidates,groupPositions,mode};
+
+  const res=document.getElementById('res');
+  res.style.display='block';
+  res.classList.add('analyzed');
+
   for(const g of GROUPS){
     const badge=document.getElementById('b_'+g),st=groupStatus[g];
     badge.style.display='inline-block';
     badge.className='sb '+(st==='GUARANTEED_TOP8'?'s8':st==='GUARANTEED_BOTTOM4'?'s4':'st');
-    badge.textContent=st==='GUARANTEED_TOP8'?'✓ TOP 8':st==='GUARANTEED_BOTTOM4'?'✗ BOTTOM 4':'? TBD';
+    badge.textContent=st==='GUARANTEED_TOP8'?'\u2713 TOP 8':st==='GUARANTEED_BOTTOM4'?'\u2717 BOTTOM 4':'? TBD';
+
     const box=document.getElementById('c_'+g),gc=candidates[g];
     if(gc&&gc.length){
       box.style.display='block';const ic=completeness[g];
-      const fgd=v=>v>40?'∞':v<-40?'-∞':(v>=0?'+':'')+v,fgf=v=>v>40?'∞':''+v;
+      const fgd=v=>v>40?'\u221e':v<-40?'-\u221e':(v>=0?'+':'')+v,fgf=v=>v>40?'\u221e':''+v;
       let h=`<div class="ct">${ic?'3rd Place Team':'Possible 3rd Place Finishers'}</div>`;
       for(const c of gc){
-        const ts=teamStatus[c.name]||'TBD',tcol=ts==='GUARANTEED_TOP8'?'var(--grn)':ts==='GUARANTEED_BOTTOM4'?'var(--red)':'var(--amb)',tlab=ts==='GUARANTEED_TOP8'?'✓ TOP 8':ts==='GUARANTEED_BOTTOM4'?'✗ BOTTOM 4':'? TBD';
+        const ts=teamStatus[c.name]||'TBD',tcol=ts==='GUARANTEED_TOP8'?'var(--grn)':ts==='GUARANTEED_BOTTOM4'?'var(--red)':'var(--amb)',tlab=ts==='GUARANTEED_TOP8'?'\u2713 ADVANCED':ts==='GUARANTEED_BOTTOM4'?'\u2717 ELIMINATED':'? TBD';
         h+=`<div class="cd"><div class="ch"><span class="cn">${c.flag} ${c.name}</span>`;
-        if(!ic)h+=`<span class="cs" style="color:${tcol}">${tlab}</span>`;
-        h+=`</div><div class="cv">Best: ${c.best.pts}p ${fgd(c.best.gd)}gd ${fgf(c.best.gf)}gf`;
-        if(!ic)h+=` | Worst: ${c.worst.pts}p ${fgd(c.worst.gd)}gd ${fgf(c.worst.gf)}gf`;
+        h+=`<span class="cs" style="color:${tcol}">${tlab}</span>`;
+        h+=`</div><div class="cv">`;
+        if(isWDL){
+          h+=`Best: ${c.best.pts}p`;
+          if(c.best.pts!==c.worst.pts)h+=` | Worst: ${c.worst.pts}p`;
+        }else{
+          h+=`Best: ${c.best.pts}p ${fgd(c.best.gd)}gd ${fgf(c.best.gf)}gf`;
+          if(!ic)h+=` | Worst: ${c.worst.pts}p ${fgd(c.worst.gd)}gd ${fgf(c.worst.gf)}gf`;
+        }
         h+=`</div></div>`;
       }
       box.innerHTML=h;
     }else box.style.display='none';
   }
+
   document.getElementById('sgrid').innerHTML=GROUPS.map(g=>{
-    const st=groupStatus[g],col=st==='GUARANTEED_TOP8'?'var(--grn)':st==='GUARANTEED_BOTTOM4'?'var(--red)':'var(--amb)',lab=st==='GUARANTEED_TOP8'?'✓ Top 8':st==='GUARANTEED_BOTTOM4'?'✗ Bottom 4':'? TBD';
+    const st=groupStatus[g],col=st==='GUARANTEED_TOP8'?'var(--grn)':st==='GUARANTEED_BOTTOM4'?'var(--red)':'var(--amb)',lab=st==='GUARANTEED_TOP8'?'\u2713 Top 8':st==='GUARANTEED_BOTTOM4'?'\u2717 Bottom 4':'? TBD';
     return`<div class="sc"><div class="sl">Group ${g}</div><div class="sv" style="color:${col}">${lab}</div></div>`;
   }).join('');
+
+  // Re-render group standings so the possible-positions column appears
+  GROUPS.forEach(renderGroupStandings);
+
   buildMatchups(pSet);buildMatrix(pSet);
-  // Generate wiki and R32 pairings if wiki.js is loaded
-  if(typeof generateAllWiki==='function') try{generateAllWiki();}catch(e){console.error('Wiki generation:',e);}
+
+  // Wiki + live 3rd-place + R32 pairings (full version, with status)
+  if(typeof generateAllWiki==='function')try{generateAllWiki();}catch(e){console.error('Wiki generation:',e);}
 }
 
 // ========== MATCHUP TABLES ==========
 function buildMatchups(pSet){
+  const sec=window._secured||{};
+  const winnerLabel=g=>(sec[g]&&sec[g][1])?` (${sec[g][1]})`:'';
+  const thirdLabel=g=>(sec[g]&&sec[g][3])?` (${sec[g][3]})`:'';
+
   const fpOpps={},tpOpps={};SLOTS.forEach(s=>fpOpps[s]=new Set());
   if(typeof COMBO_MATRIX==='undefined'){document.getElementById('fp').innerHTML='<tr><td>Matrix data not loaded</td></tr>';return;}
   for(const combo of COMBO_MATRIX){if(pSet.has(combo.groups)){SLOTS.forEach(s=>{fpOpps[s].add(combo.matchups[s]);const tid=combo.matchups[s];if(!tpOpps[tid])tpOpps[tid]=new Set();tpOpps[tid].add(s);});}}
+
   let fh='<tr><th>1st Place Team</th><th>Possible 3rd Place Opponents</th></tr>';
-  SLOTS.forEach(s=>{const opps=[...fpOpps[s]].sort();fh+=`<tr><td style="font-weight:600">${s} (${SLOT_NAMES[s]})</td><td>${opps.map(o=>`<span class="oc">${o}</span>`).join(' ')}</td></tr>`;});
+  SLOTS.forEach(s=>{const opps=[...fpOpps[s]].sort();const g=s[1];fh+=`<tr><td style="font-weight:600">${s}${winnerLabel(g)}</td><td>${opps.map(o=>`<span class="oc">${o}${thirdLabel(o[1])}</span>`).join(' ')}</td></tr>`;});
   document.getElementById('fp').innerHTML=fh;
+
   let th='<tr><th>3rd Place Group</th><th>Possible 1st Place Opponents</th></tr>';
   for(const g of GROUPS){const tid='3'+g;if(!tpOpps[tid]||tpOpps[tid].size===0)continue;const opps=[...tpOpps[tid]].sort();
-    th+=`<tr><td style="font-weight:600">${tid}</td><td>${opps.map(o=>`<span class="oc">${o} (${SLOT_NAMES[o]})</span>`).join(' ')}</td></tr>`;}
+    th+=`<tr><td style="font-weight:600">${tid}${thirdLabel(g)}</td><td>${opps.map(o=>`<span class="oc">${o}${winnerLabel(o[1])}</span>`).join(' ')}</td></tr>`;}
   document.getElementById('tp').innerHTML=th;
 }
 
@@ -174,7 +318,7 @@ function buildMatrix(pSet){
   h+='<th>1A</th><th>1B</th><th>1D</th><th>1E</th><th>1G</th><th>1I</th><th>1K</th><th>1L</th></tr></thead><tbody>';
   COMBO_MATRIX.forEach((combo,i)=>{const possible=pSet.has(combo.groups);if(possible)count++;
     h+=`<tr class="${possible?'rp':'ri'}"><td class="rn">${i+1}</td>`;
-    GROUPS.forEach(g=>{const inC=combo.groupSet.has(g);h+=`<td style="color:${inC?(possible?'var(--grn)':'var(--t3)'):'var(--t3)'};font-weight:${inC?'700':'400'}">${inC?g:'·'}</td>`;});
+    GROUPS.forEach(g=>{const inC=combo.groupSet.has(g);h+=`<td style="color:${inC?(possible?'var(--grn)':'var(--t3)'):'var(--t3)'};font-weight:${inC?'700':'400'}">${inC?g:'\u00b7'}</td>`;});
     SLOTS.forEach(s=>h+=`<td style="font-size:8px">${combo.matchups[s]}</td>`);h+='</tr>';});
   h+='</tbody></table>';
   h=`<div style="margin-bottom:6px;font-size:12px;color:var(--t2)"><strong style="color:var(--grn)">${count}</strong> of 495 combinations still possible</div>`+h;
@@ -195,67 +339,42 @@ document.getElementById('rngMode').addEventListener('change',function(){
 });
 
 // ========== RANDOM SCORE GENERATOR ==========
-// Weighted random: 0-3 much more likely than 4-8
-// Weights: 0→20, 1→18, 2→14, 3→10, 4→6, 5→3, 6→2, 7→1, 8→1
 function weightedRandomScore(){
   const weights=[20,18,14,10,6,3,2,1,1]; // indices 0-8
   const total=weights.reduce((a,b)=>a+b,0);
   let r=Math.random()*total;
-  for(let i=0;i<weights.length;i++){
-    r-=weights[i];
-    if(r<=0) return i;
-  }
+  for(let i=0;i<weights.length;i++){r-=weights[i];if(r<=0)return i;}
   return 0;
 }
-
 function randomConduct(){
-  // Most matches: 0-4 conduct points per team, occasionally higher
   const w=[30,25,20,12,6,3,2,1,1];
   const total=w.reduce((a,b)=>a+b,0);
   let r=Math.random()*total;
   for(let i=0;i<w.length;i++){r-=w[i];if(r<=0)return i;}
   return 0;
 }
-
 function generateRandom(){
   const mode=document.getElementById('rngMode').value;
   let md3Count=0;
-
-  if(mode==='md12plus'){
-    md3Count=Math.max(1,Math.min(11,parseInt(document.getElementById('rngCount').value)||4));
-  }
-
-  // Which matchdays to fill per group
+  if(mode==='md12plus')md3Count=Math.max(1,Math.min(11,parseInt(document.getElementById('rngCount').value)||4));
   const md3Groups=new Set();
-  if(mode==='all'){
-    GROUPS.forEach(g=>md3Groups.add(g));
-  } else if(mode==='md12plus'){
-    // Pick md3Count random groups for MD3
-    const shuffled=[...GROUPS].sort(()=>Math.random()-0.5);
-    for(let i=0;i<md3Count;i++) md3Groups.add(shuffled[i]);
-  }
+  if(mode==='all'){GROUPS.forEach(g=>md3Groups.add(g));}
+  else if(mode==='md12plus'){const shuffled=[...GROUPS].sort(()=>Math.random()-0.5);for(let i=0;i<md3Count;i++)md3Groups.add(shuffled[i]);}
 
-  // Fill scores
   for(const gr of GROUPS){
     for(let md=1;md<=3;md++){
-      if(md<=2 || md3Groups.has(gr)){
+      if(md<=2||md3Groups.has(gr)){
         SCHED[md].forEach((_,mi)=>{
           const id=`${gr}_${md}_${mi}`;
-          const hgEl=document.getElementById('hg_'+id);
-          const agEl=document.getElementById('ag_'+id);
-          const hcEl=document.getElementById('hc_'+id);
-          const acEl=document.getElementById('ac_'+id);
-          if(!hgEl.disabled){
-            hgEl.value=weightedRandomScore();
-            agEl.value=weightedRandomScore();
-            hcEl.value=randomConduct();
-            acEl.value=randomConduct();
-          }
+          const hgEl=document.getElementById('hg_'+id),agEl=document.getElementById('ag_'+id),hcEl=document.getElementById('hc_'+id),acEl=document.getElementById('ac_'+id);
+          if(!hgEl.disabled){hgEl.value=weightedRandomScore();agEl.value=weightedRandomScore();hcEl.value=randomConduct();acEl.value=randomConduct();}
         });
       }
     }
-    updateStandings(gr);
   }
+  invalidateAnalysis();
+  GROUPS.forEach(renderGroupStandings);
+  renderLive3rdPlace();
 }
 
 // ========== EXPORT / IMPORT ==========
@@ -266,62 +385,41 @@ function exportData(){
     for(let md=1;md<=3;md++){
       SCHED[md].forEach((_,mi)=>{
         const id=`${gr}_${md}_${mi}`;
-        const hg=document.getElementById('hg_'+id).value;
-        const ag=document.getElementById('ag_'+id).value;
-        const hc=document.getElementById('hc_'+id).value;
-        const ac=document.getElementById('ac_'+id).value;
-        if(hg!==''||ag!==''){
-          data[gr][`md${md}_m${mi}`]={hg,ag,hc:hc||'0',ac:ac||'0'};
-        }
+        const hg=document.getElementById('hg_'+id).value,ag=document.getElementById('ag_'+id).value,hc=document.getElementById('hc_'+id).value,ac=document.getElementById('ac_'+id).value;
+        if(hg!==''||ag!=='')data[gr][`md${md}_m${mi}`]={hg,ag,hc:hc||'0',ac:ac||'0'};
       });
     }
   }
-  const json=JSON.stringify(data,null,2);
-  document.getElementById('exportBox').value=json;
+  document.getElementById('exportBox').value=JSON.stringify(data,null,2);
 }
-
 function importData(){
   const text=document.getElementById('exportBox').value.trim();
   if(!text){alert('Paste data into the text box first.');return;}
   let data;
-  try{data=JSON.parse(text);}
-  catch(e){alert('Invalid data format. Must be valid JSON.');return;}
-
+  try{data=JSON.parse(text);}catch(e){alert('Invalid data format. Must be valid JSON.');return;}
   for(const gr of GROUPS){
-    if(!data[gr]) continue;
+    if(!data[gr])continue;
     for(let md=1;md<=3;md++){
       SCHED[md].forEach((_,mi)=>{
-        const key=`md${md}_m${mi}`;
-        const id=`${gr}_${md}_${mi}`;
+        const key=`md${md}_m${mi}`,id=`${gr}_${md}_${mi}`;
         if(data[gr][key]){
           const d=data[gr][key];
-          const hgEl=document.getElementById('hg_'+id);
-          const agEl=document.getElementById('ag_'+id);
-          if(!hgEl.disabled){
-            hgEl.value=d.hg!==undefined?d.hg:'';
-            agEl.value=d.ag!==undefined?d.ag:'';
-            document.getElementById('hc_'+id).value=d.hc||'0';
-            document.getElementById('ac_'+id).value=d.ac||'0';
-          }
+          const hgEl=document.getElementById('hg_'+id),agEl=document.getElementById('ag_'+id);
+          if(!hgEl.disabled){hgEl.value=d.hg!==undefined?d.hg:'';agEl.value=d.ag!==undefined?d.ag:'';document.getElementById('hc_'+id).value=d.hc||'0';document.getElementById('ac_'+id).value=d.ac||'0';}
         }
       });
     }
-    updateStandings(gr);
   }
+  invalidateAnalysis();
+  GROUPS.forEach(renderGroupStandings);
+  renderLive3rdPlace();
 }
-
 function downloadData(){
-  // Export first to ensure the box is current
   exportData();
   const text=document.getElementById('exportBox').value;
   if(!text){alert('No data to download.');return;}
   const blob=new Blob([text],{type:'application/json'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='fifa2026_3rdplace_data.json';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download='fifa2026_3rdplace_data.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }

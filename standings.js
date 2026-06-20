@@ -265,3 +265,70 @@ function cmpStatNormalized(a, b) {
   if (a.fifaRank !== b.fifaRank) return b.fifaRank - a.fifaRank;
   return 0;
 }
+
+// ============================================================
+// WIN/DRAW/LOSS RANKING ENGINE (alternate mode)
+// ------------------------------------------------------------
+// Used by the alternate analysis mode that simulates only
+// match RESULTS (W/D/L) rather than scorelines. Because goals
+// are NOT simulated, goal difference / goals scored cannot be
+// used as tiebreakers — teams are assumed able to reach any
+// GD. The ONLY criteria available are:
+//   1) Points
+//   2) Head-to-head points among the tied teams (recursively
+//      re-applied to smaller tied subsets, per FIFA rules)
+// Any teams that remain level after that are returned together
+// in one array (a "mutually tied" block): each of them is
+// assumed able to finish in ANY of the positions that block
+// spans. A four-way tie therefore collapses to a single block
+// (all positions open), exactly as required.
+//
+// Returns the same array-of-arrays shape as rankGroup(), where
+// each inner array is a set of teams sharing a position range.
+// ============================================================
+
+function rankGroupWDL(stats) {
+  var indices = stats.map(function (_, i) { return i; });
+  return doRankWDL(indices, stats);
+}
+
+function doRankWDL(indices, stats) {
+  if (indices.length <= 1) return indices.map(function (i) { return [i]; });
+  var byPts = groupByFn(indices, function (i) { return stats[i].pts; }, true);
+  var result = [];
+  for (var p = 0; p < byPts.length; p++) {
+    var pg = byPts[p];
+    if (pg.length === 1) { result.push(pg); continue; }
+    var resolved = resolveH2HPointsOnly(pg, stats);
+    for (var r = 0; r < resolved.length; r++) result.push(resolved[r]);
+  }
+  return result;
+}
+
+// Resolve a set of teams tied on points using ONLY head-to-head
+// points. Sub-groups that are still smaller than the parent set
+// are recursed into (head-to-head re-applied among just them).
+// Any block that cannot be reduced further is returned intact
+// (mutually tied -> can occupy any of the spanned positions).
+function resolveH2HPointsOnly(tied, stats) {
+  if (tied.length <= 1) return [tied];
+  var h = getH2H(tied, stats);
+  var byPts = groupByFn(tied, function (i) { return h[i].pts; }, true);
+  if (byPts.length === 1) {
+    // Every team has equal head-to-head points -> cannot separate.
+    return [tied];
+  }
+  var r = [];
+  for (var i = 0; i < byPts.length; i++) {
+    var sg = byPts[i];
+    if (sg.length === 1) { r.push(sg); }
+    else if (sg.length < tied.length) {
+      var sub = resolveH2HPointsOnly(sg, stats);
+      for (var j = 0; j < sub.length; j++) r.push(sub[j]);
+    } else {
+      // Same size as parent (shouldn't occur when byPts.length>1) -> keep together
+      r.push(sg);
+    }
+  }
+  return r;
+}
