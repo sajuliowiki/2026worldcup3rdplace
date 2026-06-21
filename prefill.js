@@ -84,13 +84,17 @@ var PREFILL_DATA = {
   // ---- GROUP E  (Germany, Curaçao, Ivory Coast, Ecuador) ----
   "E": {
     "md1_m0": { "hg": 7, "ag": 1, "hc": 0,  "ac": 0  }, // Germany 7–1 Curaçao
-    "md1_m1": { "hg": 1, "ag": 0, "hc": 3,  "ac": 1  }  // Ivory Coast 1–0 Ecuador
+    "md1_m1": { "hg": 1, "ag": 0, "hc": 3,  "ac": 1  }, // Ivory Coast 1–0 Ecuador
+    "md2_m0": { "hg": 2, "ag": 1, "hc": 0,  "ac": 0  }, // Germany 2–1 Ivory Coast
+    "md2_m1": { "hg": 0, "ag": 0, "hc": 1,  "ac": 5  }  // Ecuador 0–0 Curaçao
   },
 
   // ---- GROUP F  (Netherlands, Japan, Sweden, Tunisia) ----
   "F": {
     "md1_m0": { "hg": 2, "ag": 2, "hc": 3,  "ac": 0  }, // Netherlands 2–2 Japan
-    "md1_m1": { "hg": 5, "ag": 1, "hc": 0,  "ac": 1  }  // Sweden 5–1 Tunisia
+    "md1_m1": { "hg": 5, "ag": 1, "hc": 0,  "ac": 1  }, // Sweden 5–1 Tunisia
+    "md2_m0": { "hg": 5, "ag": 1, "hc": 0,  "ac": 3  }, // Netherlands 5–1 Sweden
+    "md2_m1": { "hg": 0, "ag": 4, "hc": 0,  "ac": 0  }  // Tunisia 0–4 Japan
   },
 
   // ---- GROUP G  (Belgium, Egypt, Iran, New Zealand) ----
