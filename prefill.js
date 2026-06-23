@@ -100,25 +100,33 @@ var PREFILL_DATA = {
   // ---- GROUP G  (Belgium, Egypt, Iran, New Zealand) ----
   "G": {
     "md1_m0": { "hg": 1, "ag": 1, "hc": 2,  "ac": 2  }, // Belgium 1–1 Egypt
-    "md1_m1": { "hg": 2, "ag": 2, "hc": 1,  "ac": 0  }  // Iran 2–2 New Zealand
+    "md1_m1": { "hg": 2, "ag": 2, "hc": 1,  "ac": 0  }, // Iran 2–2 New Zealand
+    "md2_m0": { "hg": 0, "ag": 0, "hc": 5,  "ac": 1  }, // Belgium 0–0 Iran
+    "md2_m1": { "hg": 1, "ag": 3, "hc": 2,  "ac": 1  }  // New Zealand 1–3 Egypt
   },
 
   // ---- GROUP H  (Spain, Cape Verde, Saudi Arabia, Uruguay) ----
   "H": {
     "md1_m0": { "hg": 0, "ag": 0, "hc": 1,  "ac": 1  }, // Spain 0–0 Cape Verde
-    "md1_m1": { "hg": 1, "ag": 1, "hc": 1,  "ac": 0  }  // Saudi Arabia 1–1 Uruguay
+    "md1_m1": { "hg": 1, "ag": 1, "hc": 1,  "ac": 0  }, // Saudi Arabia 1–1 Uruguay
+    "md2_m0": { "hg": 4, "ag": 0, "hc": 0,  "ac": 2  }, // Spain 4–0 Saudi Arabia
+    "md2_m1": { "hg": 2, "ag": 2, "hc": 2,  "ac": 2  }  // Uruguay 2–2 Cape Verde
   },
 
   // ---- GROUP I  (France, Senegal, Iraq, Norway) ----
   "I": {
     "md1_m0": { "hg": 3, "ag": 1, "hc": 0,  "ac": 0  }, // France 3–1 Senegal
-    "md1_m1": { "hg": 1, "ag": 4, "hc": 1,  "ac": 0  }  // Iraq 1–4 Norway
+    "md1_m1": { "hg": 1, "ag": 4, "hc": 1,  "ac": 0  }, // Iraq 1–4 Norway
+    "md2_m0": { "hg": 3, "ag": 0, "hc": 0,  "ac": 1  }, // France 3–0 Iraq
+    "md2_m1": { "hg": 3, "ag": 2, "hc": 0,  "ac": 0  }  // Norway 3–2 Senegal
   },
 
   // ---- GROUP J  (Argentina, Algeria, Austria, Jordan) ----
   "J": {
     "md1_m0": { "hg": 3, "ag": 0, "hc": 0,  "ac": 0  }, // Argentina 3–0 Algeria
-    "md1_m1": { "hg": 3, "ag": 1, "hc": 1,  "ac": 0  }  // Austria 3–1 Jordan
+    "md1_m1": { "hg": 3, "ag": 1, "hc": 1,  "ac": 0  }, // Austria 3–1 Jordan
+    "md2_m0": { "hg": 2, "ag": 0, "hc": 2,  "ac": 2  }, // Argentina 2–0 Austria
+    "md2_m1": { "hg": 1, "ag": 2, "hc": 1,  "ac": 1  }  // Jordan 1–2 Algeria
   },
 
   // ---- GROUP K  (Portugal, DR Congo, Uzbekistan, Colombia) ----
