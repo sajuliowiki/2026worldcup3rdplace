@@ -12,11 +12,21 @@ importScripts('standings.js');
 const NORMAL_SCORES = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
 
 function buildScorelines() {
+  const seen = new Set();
   const s = [];
-  for (const h of NORMAL_SCORES) for (const a of NORMAL_SCORES) s.push([h, a]);
-  s.push([99, 0]); s.push([0, 99]);
-  for (let x = 79; x <= 99; x++) for (let y = 79; y <= 99; y++) s.push([x, y]);
-  return s; // 884 total
+  const add = (h, a) => { const k = h * 1000 + a; if (!seen.has(k)) { seen.add(k); s.push([h, a]); } };
+  // Fine-grained low scores — accurate GD/GF near zero (the common case).
+  for (const h of NORMAL_SCORES) for (const a of NORMAL_SCORES) add(h, a);
+  // High-scoring block (both teams) — for goals-for tiebreakers in the high regime.
+  for (let h = 79; h <= 99; h++) for (let a = 79; a <= 99; a++) add(h, a);
+  // One-sided blowout ladder — every winning/losing margin from 21..99 in BOTH
+  // directions. This closes the gap that previously jumped straight from margin
+  // 20 to margin 99: without it, two heavily-beaten teams could not be ordered
+  // relative to each other (only the absolute extremes existed), so a team that
+  // can finish 3rd with unbounded-negative GD was wrongly capped. Covers
+  // [99,0] and [0,99] at m=99.
+  for (let m = 21; m <= 99; m++) { add(m, 0); add(0, m); }
+  return s; // 441 + 441 + 158 = 1040 scorelines
 }
 
 // ============ POSITION HELPERS ============
