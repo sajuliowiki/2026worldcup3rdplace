@@ -134,7 +134,7 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 1, "ag": 1, "hc": 3,  "ac": 1  }, // Portugal 1–1 DR Congo
     "md1_m1": { "hg": 1, "ag": 3, "hc": 1,  "ac": 1  }, // Uzbekistan 1–3 Colombia
     "md2_m0": { "hg": 5, "ag": 0, "hc": 1,  "ac": 1  }, // Portugal 5–0 Uzbekistan
-    "md2_m1": { "hg": 1, "ag": 0, "hc": 2,  "ac": 1  }  // Colombia 1–2 DR Congo
+    "md2_m1": { "hg": 1, "ag": 0, "hc": 2,  "ac": 1  }  // Colombia 1–0 DR Congo
   },
 
   // ---- GROUP L  (England, Croatia, Ghana, Panama) ----
