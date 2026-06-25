@@ -54,7 +54,9 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 2, "ag": 0, "hc": 5,  "ac": 10 }, // Mexico 2–0 South Africa
     "md1_m1": { "hg": 2, "ag": 1, "hc": 1,  "ac": 0  }, // South Korea 2–1 Czech Rep.
     "md2_m0": { "hg": 1, "ag": 0, "hc": 0,  "ac": 2  }, // Mexico 1–0 South Korea
-    "md2_m1": { "hg": 1, "ag": 1, "hc": 1,  "ac": 2  }  // Czech Rep. 1–1 South Africa
+    "md2_m1": { "hg": 1, "ag": 1, "hc": 1,  "ac": 2  }, // Czech Rep. 1–1 South Africa
+    "md3_m0": { "hg": 0, "ag": 3, "hc": 0,  "ac": 1  }, // Czech Rep. 0–3 Mexico
+    "md3_m1": { "hg": 1, "ag": 0, "hc": 1,  "ac": 1  }, // South Africa 1–0 South Korea
   },
 
   // ---- GROUP B  (Canada, Bosnia-Herzegovina, Qatar, Switzerland) ----
