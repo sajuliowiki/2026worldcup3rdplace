@@ -147,5 +147,901 @@ var PREFILL_DATA = {
     "md1_m1": { "hg": 1, "ag": 0, "hc": 1,  "ac": 2  }, // Ghana 1–0 Panama
     "md2_m0": { "hg": 0, "ag": 0, "hc": 1,  "ac": 1  }, // England 0–0 Ghana
     "md2_m1": { "hg": 0, "ag": 1, "hc": 1,  "ac": 1  }  // Panama 0–1 Croatia
+  },
+  "_cache": {
+    "regular|A|1.0:2-0/5-10;1.1:2-1/1-0;2.0:1-0/0-2;2.1:1-1/1-2": {
+      "candidates": [
+        {
+          "name": "Czech Republic",
+          "flag": "🇨🇿",
+          "pos": "A4",
+          "fifaRank": 40,
+          "best": {
+            "pts": 4,
+            "gd": 41,
+            "gf": 44,
+            "conduct": 1,
+            "fifaRank": 40
+          },
+          "worst": {
+            "pts": 1,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 40
+          }
+        },
+        {
+          "name": "South Korea",
+          "flag": "🇰🇷",
+          "pos": "A3",
+          "fifaRank": 25,
+          "best": {
+            "pts": 3,
+            "gd": -1,
+            "gf": 81,
+            "conduct": 3,
+            "fifaRank": 25
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 25
+          }
+        },
+        {
+          "name": "South Africa",
+          "flag": "🇿🇦",
+          "pos": "A2",
+          "fifaRank": 60,
+          "best": {
+            "pts": 4,
+            "gd": 41,
+            "gf": 44,
+            "conduct": 12,
+            "fifaRank": 60
+          },
+          "worst": {
+            "pts": 1,
+            "gd": -41,
+            "gf": 1,
+            "conduct": 999,
+            "fifaRank": 60
+          }
+        }
+      ],
+      "positions": {
+        "Mexico": [
+          1
+        ],
+        "South Korea": [
+          2,
+          3,
+          4
+        ],
+        "Czech Republic": [
+          2,
+          3,
+          4
+        ],
+        "South Africa": [
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "regular|B|1.0:1-1/2-3;1.1:1-1/2-1;2.0:6-0/1-9;2.1:4-1/1-6;3.0:2-1/1-2;3.1:3-1/1-1": {
+      "candidates": [
+        {
+          "name": "Bosnia-Herzegovina",
+          "flag": "🇧🇦",
+          "pos": "B2",
+          "fifaRank": 64,
+          "best": {
+            "pts": 4,
+            "gd": -1,
+            "gf": 5,
+            "conduct": 10,
+            "fifaRank": 64
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -1,
+            "gf": 5,
+            "conduct": 10,
+            "fifaRank": 64
+          }
+        }
+      ],
+      "positions": {
+        "Switzerland": [
+          1
+        ],
+        "Canada": [
+          2
+        ],
+        "Bosnia-Herzegovina": [
+          3
+        ],
+        "Qatar": [
+          4
+        ]
+      }
+    },
+    "regular|C|1.0:1-1/2-0;1.1:0-1/1-3;2.0:3-0/1-3;2.1:0-1/1-1;3.0:0-3/1-2;3.1:4-2/0-3": {
+      "candidates": [
+        {
+          "name": "Scotland",
+          "flag": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+          "pos": "C4",
+          "fifaRank": 42,
+          "best": {
+            "pts": 3,
+            "gd": -3,
+            "gf": 1,
+            "conduct": 5,
+            "fifaRank": 42
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -3,
+            "gf": 1,
+            "conduct": 5,
+            "fifaRank": 42
+          }
+        }
+      ],
+      "positions": {
+        "Brazil": [
+          1
+        ],
+        "Morocco": [
+          2
+        ],
+        "Scotland": [
+          3
+        ],
+        "Haiti": [
+          4
+        ]
+      }
+    },
+    "regular|D|1.0:4-1/1-5;1.1:2-0/0-1;2.0:2-0/3-4;2.1:0-1/2-6": {
+      "candidates": [
+        {
+          "name": "Paraguay",
+          "flag": "🇵🇾",
+          "pos": "D2",
+          "fifaRank": 41,
+          "best": {
+            "pts": 4,
+            "gd": -2,
+            "gf": 81,
+            "conduct": 11,
+            "fifaRank": 41
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 41
+          }
+        },
+        {
+          "name": "Australia",
+          "flag": "🇦🇺",
+          "pos": "D3",
+          "fifaRank": 27,
+          "best": {
+            "pts": 3,
+            "gd": -1,
+            "gf": 81,
+            "conduct": 4,
+            "fifaRank": 27
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 27
+          }
+        }
+      ],
+      "positions": {
+        "United States": [
+          1
+        ],
+        "Australia": [
+          2,
+          3
+        ],
+        "Paraguay": [
+          2,
+          3
+        ],
+        "Turkey": [
+          4
+        ]
+      }
+    },
+    "regular|E|1.0:7-1/0-0;1.1:1-0/3-1;2.0:2-1/0-0;2.1:0-0/1-5": {
+      "candidates": [
+        {
+          "name": "Ecuador",
+          "flag": "🇪🇨",
+          "pos": "E4",
+          "fifaRank": 23,
+          "best": {
+            "pts": 4,
+            "gd": 41,
+            "gf": 42,
+            "conduct": 2,
+            "fifaRank": 23
+          },
+          "worst": {
+            "pts": 1,
+            "gd": -41,
+            "gf": 0,
+            "conduct": 999,
+            "fifaRank": 23
+          }
+        },
+        {
+          "name": "Ivory Coast",
+          "flag": "🇨🇮",
+          "pos": "E3",
+          "fifaRank": 33,
+          "best": {
+            "pts": 3,
+            "gd": -1,
+            "gf": 81,
+            "conduct": 3,
+            "fifaRank": 33
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 33
+          }
+        },
+        {
+          "name": "Curaçao",
+          "flag": "🇨🇼",
+          "pos": "E2",
+          "fifaRank": 82,
+          "best": {
+            "pts": 4,
+            "gd": 41,
+            "gf": 48,
+            "conduct": 5,
+            "fifaRank": 82
+          },
+          "worst": {
+            "pts": 1,
+            "gd": -41,
+            "gf": 1,
+            "conduct": 999,
+            "fifaRank": 82
+          }
+        }
+      ],
+      "positions": {
+        "Germany": [
+          1
+        ],
+        "Ivory Coast": [
+          2,
+          3,
+          4
+        ],
+        "Ecuador": [
+          2,
+          3,
+          4
+        ],
+        "Curaçao": [
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "regular|F|1.0:2-2/3-0;1.1:5-1/0-1;2.0:5-1/0-3;2.1:0-4/0-0": {
+      "candidates": [
+        {
+          "name": "Sweden",
+          "flag": "🇸🇪",
+          "pos": "F3",
+          "fifaRank": 38,
+          "best": {
+            "pts": 4,
+            "gd": 0,
+            "gf": 85,
+            "conduct": 3,
+            "fifaRank": 38
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 6,
+            "conduct": 999,
+            "fifaRank": 38
+          }
+        },
+        {
+          "name": "Japan",
+          "flag": "🇯🇵",
+          "pos": "F2",
+          "fifaRank": 18,
+          "best": {
+            "pts": 4,
+            "gd": 3,
+            "gf": 85,
+            "conduct": 0,
+            "fifaRank": 18
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -41,
+            "gf": 6,
+            "conduct": 999,
+            "fifaRank": 18
+          }
+        },
+        {
+          "name": "Netherlands",
+          "flag": "🇳🇱",
+          "pos": "F1",
+          "fifaRank": 8,
+          "best": {
+            "pts": 4,
+            "gd": 3,
+            "gf": 86,
+            "conduct": 3,
+            "fifaRank": 8
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -41,
+            "gf": 7,
+            "conduct": 999,
+            "fifaRank": 8
+          }
+        }
+      ],
+      "positions": {
+        "Netherlands": [
+          1,
+          2,
+          3
+        ],
+        "Japan": [
+          1,
+          2,
+          3
+        ],
+        "Sweden": [
+          1,
+          2,
+          3
+        ],
+        "Tunisia": [
+          4
+        ]
+      }
+    },
+    "regular|G|1.0:1-1/2-2;1.1:2-2/1-0;2.0:0-0/5-1;2.1:1-3/2-1": {
+      "candidates": [
+        {
+          "name": "Belgium",
+          "flag": "🇧🇪",
+          "pos": "G1",
+          "fifaRank": 9,
+          "best": {
+            "pts": 3,
+            "gd": 0,
+            "gf": 80,
+            "conduct": 7,
+            "fifaRank": 9
+          },
+          "worst": {
+            "pts": 2,
+            "gd": -41,
+            "gf": 1,
+            "conduct": 999,
+            "fifaRank": 9
+          }
+        },
+        {
+          "name": "Iran",
+          "flag": "🇮🇷",
+          "pos": "G3",
+          "fifaRank": 20,
+          "best": {
+            "pts": 3,
+            "gd": 0,
+            "gf": 81,
+            "conduct": 2,
+            "fifaRank": 20
+          },
+          "worst": {
+            "pts": 2,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 20
+          }
+        },
+        {
+          "name": "New Zealand",
+          "flag": "🇳🇿",
+          "pos": "G4",
+          "fifaRank": 85,
+          "best": {
+            "pts": 4,
+            "gd": 41,
+            "gf": 46,
+            "conduct": 2,
+            "fifaRank": 85
+          },
+          "worst": {
+            "pts": 2,
+            "gd": -2,
+            "gf": 3,
+            "conduct": 999,
+            "fifaRank": 85
+          }
+        },
+        {
+          "name": "Egypt",
+          "flag": "🇪🇬",
+          "pos": "G2",
+          "fifaRank": 29,
+          "best": {
+            "pts": 4,
+            "gd": 1,
+            "gf": 83,
+            "conduct": 3,
+            "fifaRank": 29
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -41,
+            "gf": 4,
+            "conduct": 999,
+            "fifaRank": 29
+          }
+        }
+      ],
+      "positions": {
+        "Egypt": [
+          1,
+          2,
+          3
+        ],
+        "Iran": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "Belgium": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "New Zealand": [
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "regular|H|1.0:0-0/1-1;1.1:1-1/1-0;2.0:4-0/0-2;2.1:2-2/2-2": {
+      "candidates": [
+        {
+          "name": "Cape Verde",
+          "flag": "🇨🇻",
+          "pos": "H2",
+          "fifaRank": 67,
+          "best": {
+            "pts": 3,
+            "gd": 0,
+            "gf": 81,
+            "conduct": 3,
+            "fifaRank": 67
+          },
+          "worst": {
+            "pts": 2,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 67
+          }
+        },
+        {
+          "name": "Uruguay",
+          "flag": "🇺🇾",
+          "pos": "H4",
+          "fifaRank": 16,
+          "best": {
+            "pts": 3,
+            "gd": 0,
+            "gf": 82,
+            "conduct": 2,
+            "fifaRank": 16
+          },
+          "worst": {
+            "pts": 2,
+            "gd": -41,
+            "gf": 3,
+            "conduct": 999,
+            "fifaRank": 16
+          }
+        },
+        {
+          "name": "Saudi Arabia",
+          "flag": "🇸🇦",
+          "pos": "H3",
+          "fifaRank": 61,
+          "best": {
+            "pts": 4,
+            "gd": 41,
+            "gf": 46,
+            "conduct": 3,
+            "fifaRank": 61
+          },
+          "worst": {
+            "pts": 2,
+            "gd": -4,
+            "gf": 1,
+            "conduct": 999,
+            "fifaRank": 61
+          }
+        },
+        {
+          "name": "Spain",
+          "flag": "🇪🇸",
+          "pos": "H1",
+          "fifaRank": 2,
+          "best": {
+            "pts": 4,
+            "gd": 3,
+            "gf": 83,
+            "conduct": 1,
+            "fifaRank": 2
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -41,
+            "gf": 4,
+            "conduct": 999,
+            "fifaRank": 2
+          }
+        }
+      ],
+      "positions": {
+        "Spain": [
+          1,
+          2,
+          3
+        ],
+        "Uruguay": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "Cape Verde": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "Saudi Arabia": [
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    "regular|I|1.0:3-1/0-0;1.1:1-4/1-0;2.0:3-0/0-1;2.1:3-2/0-0": {
+      "candidates": [
+        {
+          "name": "Senegal",
+          "flag": "🇸🇳",
+          "pos": "I2",
+          "fifaRank": 15,
+          "best": {
+            "pts": 3,
+            "gd": 41,
+            "gf": 47,
+            "conduct": 0,
+            "fifaRank": 15
+          },
+          "worst": {
+            "pts": 1,
+            "gd": -3,
+            "gf": 3,
+            "conduct": 999,
+            "fifaRank": 15
+          }
+        },
+        {
+          "name": "Iraq",
+          "flag": "🇮🇶",
+          "pos": "I3",
+          "fifaRank": 57,
+          "best": {
+            "pts": 3,
+            "gd": 41,
+            "gf": 48,
+            "conduct": 2,
+            "fifaRank": 57
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -5,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 57
+          }
+        }
+      ],
+      "positions": {
+        "France": [
+          1,
+          2
+        ],
+        "Norway": [
+          1,
+          2
+        ],
+        "Senegal": [
+          3,
+          4
+        ],
+        "Iraq": [
+          3,
+          4
+        ]
+      }
+    },
+    "regular|J|1.0:3-0/0-0;1.1:3-1/1-0;2.0:2-0/2-2;2.1:1-2/1-1": {
+      "candidates": [
+        {
+          "name": "Algeria",
+          "flag": "🇩🇿",
+          "pos": "J2",
+          "fifaRank": 28,
+          "best": {
+            "pts": 4,
+            "gd": -2,
+            "gf": 81,
+            "conduct": 1,
+            "fifaRank": 28
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 28
+          }
+        },
+        {
+          "name": "Austria",
+          "flag": "🇦🇹",
+          "pos": "J3",
+          "fifaRank": 24,
+          "best": {
+            "pts": 3,
+            "gd": -1,
+            "gf": 82,
+            "conduct": 3,
+            "fifaRank": 24
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 3,
+            "conduct": 999,
+            "fifaRank": 24
+          }
+        }
+      ],
+      "positions": {
+        "Argentina": [
+          1
+        ],
+        "Austria": [
+          2,
+          3
+        ],
+        "Algeria": [
+          2,
+          3
+        ],
+        "Jordan": [
+          4
+        ]
+      }
+    },
+    "regular|K|1.0:1-1/3-1;1.1:1-3/1-1;2.0:5-0/1-1;2.1:1-0/2-1": {
+      "candidates": [
+        {
+          "name": "DR Congo",
+          "flag": "🇨🇩",
+          "pos": "K2",
+          "fifaRank": 46,
+          "best": {
+            "pts": 4,
+            "gd": 41,
+            "gf": 43,
+            "conduct": 2,
+            "fifaRank": 46
+          },
+          "worst": {
+            "pts": 2,
+            "gd": -1,
+            "gf": 1,
+            "conduct": 999,
+            "fifaRank": 46
+          }
+        },
+        {
+          "name": "Uzbekistan",
+          "flag": "🇺🇿",
+          "pos": "K3",
+          "fifaRank": 50,
+          "best": {
+            "pts": 3,
+            "gd": 41,
+            "gf": 49,
+            "conduct": 2,
+            "fifaRank": 50
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -6,
+            "gf": 2,
+            "conduct": 999,
+            "fifaRank": 50
+          }
+        },
+        {
+          "name": "Portugal",
+          "flag": "🇵🇹",
+          "pos": "K1",
+          "fifaRank": 5,
+          "best": {
+            "pts": 4,
+            "gd": 4,
+            "gf": 85,
+            "conduct": 4,
+            "fifaRank": 5
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -41,
+            "gf": 6,
+            "conduct": 999,
+            "fifaRank": 5
+          }
+        }
+      ],
+      "positions": {
+        "Colombia": [
+          1,
+          2
+        ],
+        "Portugal": [
+          1,
+          2,
+          3
+        ],
+        "DR Congo": [
+          2,
+          3,
+          4
+        ],
+        "Uzbekistan": [
+          3,
+          4
+        ]
+      }
+    },
+    "regular|L|1.0:4-2/0-0;1.1:1-0/1-2;2.0:0-0/1-1;2.1:0-1/1-1": {
+      "candidates": [
+        {
+          "name": "Croatia",
+          "flag": "🇭🇷",
+          "pos": "L2",
+          "fifaRank": 11,
+          "best": {
+            "pts": 4,
+            "gd": -1,
+            "gf": 82,
+            "conduct": 1,
+            "fifaRank": 11
+          },
+          "worst": {
+            "pts": 3,
+            "gd": -41,
+            "gf": 3,
+            "conduct": 999,
+            "fifaRank": 11
+          }
+        },
+        {
+          "name": "Ghana",
+          "flag": "🇬🇭",
+          "pos": "L3",
+          "fifaRank": 73,
+          "best": {
+            "pts": 4,
+            "gd": 0,
+            "gf": 80,
+            "conduct": 2,
+            "fifaRank": 73
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -41,
+            "gf": 1,
+            "conduct": 999,
+            "fifaRank": 73
+          }
+        },
+        {
+          "name": "England",
+          "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+          "pos": "L1",
+          "fifaRank": 4,
+          "best": {
+            "pts": 4,
+            "gd": 0,
+            "gf": 83,
+            "conduct": 1,
+            "fifaRank": 4
+          },
+          "worst": {
+            "pts": 4,
+            "gd": -41,
+            "gf": 4,
+            "conduct": 999,
+            "fifaRank": 4
+          }
+        }
+      ],
+      "positions": {
+        "England": [
+          1,
+          2,
+          3
+        ],
+        "Ghana": [
+          1,
+          2,
+          3
+        ],
+        "Croatia": [
+          1,
+          2,
+          3
+        ],
+        "Panama": [
+          4
+        ]
+      }
+    }
   }
 };
