@@ -62,7 +62,9 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 1, "ag": 1, "hc": 2,  "ac": 3  }, // Canada 1–1 Bosnia & Herz.
     "md1_m1": { "hg": 1, "ag": 1, "hc": 2,  "ac": 1  }, // Qatar 1–1 Switzerland
     "md2_m0": { "hg": 6, "ag": 0, "hc": 1,  "ac": 9  }, // Canada 6–0 Qatar
-    "md2_m1": { "hg": 4, "ag": 1, "hc": 1,  "ac": 6  }  // Switzerland 4–1 Bosnia & Herz.
+    "md2_m1": { "hg": 4, "ag": 1, "hc": 1,  "ac": 6  }, // Switzerland 4–1 Bosnia & Herz.
+    "md3_m0": { "hg": 2, "ag": 1, "hc": 1,  "ac": 2  }, // Switzerland 2–1 Canada
+    "md3_m1": { "hg": 3, "ag": 1, "hc": 1,  "ac": 1  }, // Bosnia & Herz. 3–1 Qatar
   },
 
   // ---- GROUP C  (Brazil, Morocco, Haiti, Scotland) ----
@@ -70,7 +72,9 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 1, "ag": 1, "hc": 2,  "ac": 0  }, // Brazil 1–1 Morocco
     "md1_m1": { "hg": 0, "ag": 1, "hc": 1,  "ac": 3  }, // Haiti 0–1 Scotland
     "md2_m0": { "hg": 3, "ag": 0, "hc": 1,  "ac": 3  }, // Brazil 3–0 Haiti
-    "md2_m1": { "hg": 0, "ag": 1, "hc": 1,  "ac": 1  }  // Scotland 0–1 Morocco
+    "md2_m1": { "hg": 0, "ag": 1, "hc": 1,  "ac": 1  }, // Scotland 0–1 Morocco
+    "md3_m0": { "hg": 0, "ag": 3, "hc": 1,  "ac": 2  }, // Scotland 0–3 Brazil
+    "md3_m1": { "hg": 4, "ag": 2, "hc": 0,  "ac": 3  }, // Morocco 4–2 Haiti
   },
 
   // ---- GROUP D  (United States, Paraguay, Australia, Turkey) ----
