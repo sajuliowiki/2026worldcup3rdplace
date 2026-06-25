@@ -263,6 +263,8 @@ function generateCombosTableWiki(pSet) {
   L.push('! scope="col" style="width:2em" | {{abbr|No.|Option number}}');
   L.push('! scope="col" style="width:2em" class="unsortable" colspan="12" | {{Navbar-header|Third-placed teams<br>advance from groups|Template:2026 FIFA World Cup third-place table}}');
   L.push('! scope="col" class="unsortable" |');
+  L.push('! scope="col" style="width:2em" | Still<br>possible?');
+  L.push('! scope="col" class="unsortable" |');
   L.push('! scope="col" style="width:2em" class="unsortable" | 1A<br>vs');
   L.push('! scope="col" style="width:2em" class="unsortable" | 1B<br>vs');
   L.push('! scope="col" style="width:2em" class="unsortable" | 1D<br>vs');
@@ -277,13 +279,16 @@ function generateCombosTableWiki(pSet) {
     L.push(possible ? '|- style="background:#BBF3BB"' : '|-');
     L.push(`! scope="row" | ${i+1}`);
     const groupCells = GROUPS.map(g => combo.groupSet.has(g) ? `'''${g}'''` : '').join(' || ');
+    const status = possible ? 'Yes' : '{{No}}';
     const matchups = `${combo.matchups['1A']} || ${combo.matchups['1B']} || ${combo.matchups['1D']} || ${combo.matchups['1E']} || ${combo.matchups['1G']} || ${combo.matchups['1I']} || ${combo.matchups['1K']} || ${combo.matchups['1L']}`;
     if (i === 0) {
       L.push(`| ${groupCells}`.replace(/  +/g,' '));
       L.push('! rowspan="495" |');
+      L.push(`| ${status}`);
+      L.push('! rowspan="495" |');
       L.push(`| ${matchups}`);
     } else {
-      L.push(`| ${groupCells} || ${matchups}`.replace(/  +/g,' '));
+      L.push(`| ${groupCells} || ${status} || ${matchups}`.replace(/  +/g,' '));
     }
   });
 
