@@ -287,46 +287,53 @@ function cmpStatNormalized(a, b) {
 // each inner array is a set of teams sharing a position range.
 // ============================================================
 
-function rankGroupWDL(stats) {
+// isDet(idx) -> true when team idx has fully determined goal difference
+// (no unplayed fixtures). When omitted, all teams are treated as undetermined.
+function rankGroupWDL(stats, isDet) {
+  isDet = isDet || function () { return false; };
   var indices = stats.map(function (_, i) { return i; });
-  return doRankWDL(indices, stats);
+  return doRankWDL(indices, stats, isDet);
 }
 
-function doRankWDL(indices, stats) {
+function doRankWDL(indices, stats, isDet) {
   if (indices.length <= 1) return indices.map(function (i) { return [i]; });
   var byPts = groupByFn(indices, function (i) { return stats[i].pts; }, true);
   var result = [];
   for (var p = 0; p < byPts.length; p++) {
     var pg = byPts[p];
     if (pg.length === 1) { result.push(pg); continue; }
-    var resolved = resolveH2HPointsOnly(pg, stats);
+    var resolved = resolveH2HPointsOnly(pg, stats, isDet);
     for (var r = 0; r < resolved.length; r++) result.push(resolved[r]);
   }
   return result;
 }
 
-// Resolve a set of teams tied on points using ONLY head-to-head
-// points. Sub-groups that are still smaller than the parent set
-// are recursed into (head-to-head re-applied among just them).
-// Any block that cannot be reduced further is returned intact
-// (mutually tied -> can occupy any of the spanned positions).
-function resolveH2HPointsOnly(tied, stats) {
+// Resolve a set of teams tied on points using head-to-head points. Sub-groups
+// still smaller than the parent set are recursed into (head-to-head re-applied
+// among just them). A block that cannot be reduced by head-to-head points stays
+// mutually tied — UNLESS every team in it has fully determined goal difference,
+// in which case goals are known and we fall through to the real FIFA tiebreakers
+// (GD, GF, conduct, FIFA ranking). This is what lets a completed group, or any
+// tie among teams that have all finished their matches, resolve exactly.
+function resolveH2HPointsOnly(tied, stats, isDet) {
   if (tied.length <= 1) return [tied];
   var h = getH2H(tied, stats);
   var byPts = groupByFn(tied, function (i) { return h[i].pts; }, true);
   if (byPts.length === 1) {
-    // Every team has equal head-to-head points -> cannot separate.
-    return [tied];
+    // Every team has equal head-to-head points.
+    var allDetermined = true;
+    for (var k = 0; k < tied.length; k++) { if (!isDet(tied[k])) { allDetermined = false; break; } }
+    if (allDetermined) return resolveH2HGD(tied, stats, h); // goals known -> exact
+    return [tied];                                          // goals could swing -> tied
   }
   var r = [];
   for (var i = 0; i < byPts.length; i++) {
     var sg = byPts[i];
     if (sg.length === 1) { r.push(sg); }
     else if (sg.length < tied.length) {
-      var sub = resolveH2HPointsOnly(sg, stats);
+      var sub = resolveH2HPointsOnly(sg, stats, isDet);
       for (var j = 0; j < sub.length; j++) r.push(sub[j]);
     } else {
-      // Same size as parent (shouldn't occur when byPts.length>1) -> keep together
       r.push(sg);
     }
   }

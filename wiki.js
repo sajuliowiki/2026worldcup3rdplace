@@ -25,6 +25,15 @@ const FIFA_CODES={
 // app before any wiki/R32 generation. Drives confirmed team fill-ins.
 var _securedPos={};
 
+// FIFA.com uses different display names than this app for some teams. Applied
+// only inside the football-box reference titles when a team is confirmed.
+const FIFA_TITLE_NAMES={
+  "Iran":"IR Iran","South Korea":"Korea Republic","Cape Verde":"Cabo Verde",
+  "DR Congo":"Congo DR","Ivory Coast":"Côte d'Ivoire","United States":"USA",
+  "Czech Republic":"Czechia","Turkey":"Türkiye"
+};
+function fifaTitleName(name){return FIFA_TITLE_NAMES[name]||name;}
+
 // ========== STANDINGS CACHE ==========
 function computeStandingsCache(completeness) {
   const cache = {};
@@ -114,7 +123,7 @@ function buildLive3rdPlaceTable(standingsCache, groupStatus, completeness) {
     return a.fifaRank-b.fifaRank;
   });
 
-  let h = '<table class="tpt"><tr><th>#</th><th>Grp</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th title="Team Conduct">TC</th><th title="FIFA ranking">FIFA</th><th>Status</th></tr>';
+  let h = '<table class="tpt"><tr><th>#</th><th>Grp</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th title="Conduct">C</th><th title="FIFA ranking">FIFA</th><th>Status</th></tr>';
   entries.forEach((e, i) => {
     const mp = e.w + e.d + e.l;
     const st = e.status==='GUARANTEED_TOP8'?'\u2713 Advance':e.status==='GUARANTEED_BOTTOM4'?'\u2717 Eliminated':'';
@@ -131,7 +140,8 @@ function buildBestWorstSummary(candidates, mode) {
   const isWDL = mode==='wdl';
   const fgd=v=>v>40?'\u221e':v<-40?'-\u221e':(v>=0?'+':'')+v;
   const fgf=v=>v>40?'\u221e':''+v;
-  const fmt=s=> isWDL ? `${s.pts}p` : `${s.pts}p ${fgd(s.gd)}gd ${fgf(s.gf)}gf`;
+  const fc=v=>v>40?'\u221e':''+v;
+  const fmt=s=> isWDL ? `${s.pts}p` : `${s.pts}p ${fgd(s.gd)}gd ${fgf(s.gf)}gf ${fc(s.conduct)}c`;
 
   let h='<div style="margin-top:10px"><table class="tpt"><tr><th>Grp</th><th>Best Result (if 3rd)</th><th>Team(s)</th><th>Worst Result (if 3rd)</th><th>Team(s)</th></tr>';
   for(const g of GROUPS){
@@ -289,41 +299,29 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
   if(typeof COMBO_MATRIX==='undefined')return'';
   const sp=getSlotPossible(pSet);
 
+  // refId = FIFA.com match id; r3 = original 3rd-place placeholder for the
+  // reference title (e.g. "3ABCDF"). The reference title is rebuilt below using
+  // the confirmed team name (FIFA spelling) once a slot is locked.
   const matches=[
-    {num:73,t1:"2A",t2:"2B",date:"6|28",time:'12:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'SoFi Stadium',city:'Inglewood, California|Inglewood',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021518 "2A vs 2B {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:76,t1:"1C",t2:"2F",date:"6|29",time:'12:00&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'NRG Stadium',city:'Houston',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021516 "1C vs 2F {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:74,t1:"1E",t2:"3rd",slot:"1E",date:"6|29",time:'4:30&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'Gillette Stadium',city:'Foxborough, Massachusetts|Foxborough',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021513 "1E vs 3ABCDF {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:75,t1:"1F",t2:"2C",date:"6|29",time:'7:00&nbsp;p.m.',tz:'UTC−06:00|UTC−6',venue:'Estadio BBVA',city:'Guadalupe, Nuevo León|Guadalupe',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021522 "1F vs 2C {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:78,t1:"2E",t2:"2I",date:"6|30",time:'12:00&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'AT&T Stadium',city:'Arlington, Texas|Arlington',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021514 "2E vs 2I {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:77,t1:"1I",t2:"3rd",slot:"1I",date:"6|30",time:'5:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'MetLife Stadium',city:'East Rutherford, New Jersey|East Rutherford',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021523 "1I vs 3CDFGH {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:79,t1:"1A",t2:"3rd",slot:"1A",date:"6|30",time:'7:00&nbsp;p.m.',tz:'UTC−06:00|UTC−6',venue:'Estadio Azteca',city:'Mexico City',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021520 "1A vs 3CEFHI {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:80,t1:"1L",t2:"3rd",slot:"1L",date:"7|1",time:'12:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'Mercedes-Benz Stadium',city:'Atlanta',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021512 "1L vs 3EHIJK {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:82,t1:"1G",t2:"3rd",slot:"1G",date:"7|1",time:'1:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'Lumen Field',city:'Seattle',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021525 "1G vs 3AEHIJ {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:81,t1:"1D",t2:"3rd",slot:"1D",date:"7|1",time:'5:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:"Levi's Stadium",city:'Santa Clara, California|Santa Clara',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021524 "1D vs 3BEFIJ {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:84,t1:"1H",t2:"2J",date:"7|2",time:'12:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'SoFi Stadium',city:'Inglewood, California|Inglewood',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021519 "1H vs 2J {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:83,t1:"2K",t2:"2L",date:"7|2",time:'7:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'BMO Field',city:'Toronto',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021526 "2K vs 2L {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:85,t1:"1B",t2:"3rd",slot:"1B",date:"7|2",time:'8:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'BC Place',city:'Vancouver',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021527 "1B vs 3EFGIJ {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:88,t1:"2D",t2:"2G",date:"7|3",time:'1:00&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'AT&T Stadium',city:'Arlington, Texas|Arlington',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021515 "2D vs 2G {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:86,t1:"1J",t2:"2H",date:"7|3",time:'6:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'Hard Rock Stadium',city:'Miami Gardens, Florida|Miami Gardens',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021521 "1J vs 2H {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
-    {num:87,t1:"1K",t2:"3rd",slot:"1K",date:"7|3",time:'8:30&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'Arrowhead Stadium',city:'Kansas City, Missouri|Kansas City',
-     report:'|report=<ref group="Report">[https://www.fifa.com/en/match-centre/match/17/285023/289287/400021517 "1K vs 3DEIJL {{!}} Round of 32 {{!}} FIFA World Cup 2026"]. FIFA. Retrieved May 1, 2026.</ref>'},
+    {num:73,t1:"2A",t2:"2B",date:"6|28",time:'12:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'SoFi Stadium',city:'Inglewood, California|Inglewood',refId:'400021518'},
+    {num:76,t1:"1C",t2:"2F",date:"6|29",time:'12:00&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'NRG Stadium',city:'Houston',refId:'400021516'},
+    {num:74,t1:"1E",t2:"3rd",slot:"1E",r3:"3ABCDF",date:"6|29",time:'4:30&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'Gillette Stadium',city:'Foxborough, Massachusetts|Foxborough',refId:'400021513'},
+    {num:75,t1:"1F",t2:"2C",date:"6|29",time:'7:00&nbsp;p.m.',tz:'UTC−06:00|UTC−6',venue:'Estadio BBVA',city:'Guadalupe, Nuevo León|Guadalupe',refId:'400021522'},
+    {num:78,t1:"2E",t2:"2I",date:"6|30",time:'12:00&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'AT&T Stadium',city:'Arlington, Texas|Arlington',refId:'400021514'},
+    {num:77,t1:"1I",t2:"3rd",slot:"1I",r3:"3CDFGH",date:"6|30",time:'5:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'MetLife Stadium',city:'East Rutherford, New Jersey|East Rutherford',refId:'400021523'},
+    {num:79,t1:"1A",t2:"3rd",slot:"1A",r3:"3CEFHI",date:"6|30",time:'7:00&nbsp;p.m.',tz:'UTC−06:00|UTC−6',venue:'Estadio Azteca',city:'Mexico City',refId:'400021520'},
+    {num:80,t1:"1L",t2:"3rd",slot:"1L",r3:"3EHIJK",date:"7|1",time:'12:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'Mercedes-Benz Stadium',city:'Atlanta',refId:'400021512'},
+    {num:82,t1:"1G",t2:"3rd",slot:"1G",r3:"3AEHIJ",date:"7|1",time:'1:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'Lumen Field',city:'Seattle',refId:'400021525'},
+    {num:81,t1:"1D",t2:"3rd",slot:"1D",r3:"3BEFIJ",date:"7|1",time:'5:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:"Levi's Stadium",city:'Santa Clara, California|Santa Clara',refId:'400021524'},
+    {num:84,t1:"1H",t2:"2J",date:"7|2",time:'12:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'SoFi Stadium',city:'Inglewood, California|Inglewood',refId:'400021519'},
+    {num:83,t1:"2K",t2:"2L",date:"7|2",time:'7:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'BMO Field',city:'Toronto',refId:'400021526'},
+    {num:85,t1:"1B",t2:"3rd",slot:"1B",r3:"3EFGIJ",date:"7|2",time:'8:00&nbsp;p.m.',tz:'UTC−07:00|UTC−7',venue:'BC Place',city:'Vancouver',refId:'400021527'},
+    {num:88,t1:"2D",t2:"2G",date:"7|3",time:'1:00&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'AT&T Stadium',city:'Arlington, Texas|Arlington',refId:'400021515'},
+    {num:86,t1:"1J",t2:"2H",date:"7|3",time:'6:00&nbsp;p.m.',tz:'UTC−04:00|UTC−4',venue:'Hard Rock Stadium',city:'Miami Gardens, Florida|Miami Gardens',refId:'400021521'},
+    {num:87,t1:"1K",t2:"3rd",slot:"1K",r3:"3DEIJL",date:"7|3",time:'8:30&nbsp;p.m.',tz:'UTC−05:00|UTC−5',venue:'Arrowhead Stadium',city:'Kansas City, Missouri|Kansas City',refId:'400021517'},
   ];
 
+  const REF_BASE='https://www.fifa.com/en/match-centre/match/17/285023/289287/';
   const L=[];
   L.push('==Matches==');
   L.push('');
@@ -331,6 +329,14 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
     const r1=resolveTeamWiki(m.t1,m.slot,sp,standingsCache,completeness,false);
     const r2=resolveTeamWiki(m.t2,m.slot,sp,standingsCache,completeness,true);
     const heading=`${r1.plain} vs ${r2.plain}`;
+
+    // Reference title: use the confirmed team's FIFA name, else the placeholder code.
+    const t1code=m.t1;
+    const t2code=(m.t2==='3rd')?m.r3:m.t2;
+    const refName1=r1.confirmed?fifaTitleName(r1.plain):t1code;
+    const refName2=r2.confirmed?fifaTitleName(r2.plain):t2code;
+    const refTitle=`${refName1} vs ${refName2} {{!}} Round of 32 {{!}} FIFA World Cup 2026`;
+    const report=`|report=<ref group="Report">[${REF_BASE}${m.refId} "${refTitle}"]. FIFA. Retrieved May 1, 2026.</ref>`;
 
     L.push(`===${heading}===`);
     L.push(`<section begin=R32-${matches.indexOf(m)+1} />{{#invoke:Football box|main`);
@@ -344,7 +350,7 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
     L.push(`|stadium=[[${m.venue}]], [[${m.city}]]`);
     L.push('|attendance=');
     L.push('|referee=');
-    L.push(m.report);
+    L.push(report);
     L.push(`}}<section end=R32-${matches.indexOf(m)+1} />`);
     L.push('');
   }

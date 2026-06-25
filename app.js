@@ -154,6 +154,7 @@ function clearAll(){
   document.querySelectorAll('.si').forEach(el=>{el.value='';el.disabled=false;});
   document.querySelectorAll('.ci').forEach(el=>{el.value='0';el.disabled=false;});
   document.getElementById('lock').checked=false;
+  window._groupCache={};
   invalidateAnalysis();
   document.getElementById('res').style.display='none';
   GROUPS.forEach(g=>{document.getElementById('b_'+g).style.display='none';document.getElementById('c_'+g).style.display='none';document.getElementById('st_'+g).innerHTML='';});
@@ -206,6 +207,15 @@ function run(){
   document.getElementById('prog').style.display='block';
   if(worker)worker.terminate();
   worker=new Worker('worker.js');
+
+  // Reuse cached per-group results for groups whose data (and mode) is unchanged,
+  // so finished groups aren't re-simulated on every run.
+  const cached={};
+  for(const g of GROUPS){
+    const key=cacheKeyFor(g,mode);
+    if(window._groupCache && window._groupCache[key]) cached[g]=window._groupCache[key];
+  }
+
   let cands=null;
   worker.onmessage=function(e){
     const d=e.data;
@@ -214,8 +224,28 @@ function run(){
     else if(d.type==='result'){document.getElementById('runBtn').disabled=false;document.getElementById('prog').style.display='none';showResults(d.data,cands,completeness);}
   };
   worker.onerror=function(err){console.error(err);document.getElementById('runBtn').disabled=false;document.getElementById('pmsg').textContent='Error: '+err.message;};
-  worker.postMessage({type:'analyze',data:{matchData,completeness,mode}});
+  worker.postMessage({type:'analyze',data:{matchData,completeness,mode,cached}});
 }
+
+// ========== PER-GROUP RESULT CACHE ==========
+// Per-group simulation depends only on that group's match data and the mode,
+// so we cache it. A finished (or MD2-only) group keeps the same result run
+// after run until its own scores change, avoiding a fresh 1M-scoreline sim.
+window._groupCache = window._groupCache || {};
+
+function groupSignature(gr){
+  const parts=[];
+  for(let md=1;md<=3;md++)SCHED[md].forEach((m,mi)=>{
+    const id=`${gr}_${md}_${mi}`;
+    const hg=document.getElementById('hg_'+id).value,ag=document.getElementById('ag_'+id).value;
+    if(hg!==''&&ag!==''){
+      const hc=document.getElementById('hc_'+id).value||'0',ac=document.getElementById('ac_'+id).value||'0';
+      parts.push(`${md}.${mi}:${hg}-${ag}/${hc}-${ac}`);
+    }
+  });
+  return parts.join(';');
+}
+function cacheKeyFor(gr,mode){ return `${mode}|${gr}|${groupSignature(gr)}`; }
 
 // ========== SECURED POSITIONS ==========
 // A position in a group is "secured" when exactly one team can ONLY
@@ -243,6 +273,13 @@ function showResults(analysis,candidates,completeness){
   window._secured=computeSecured(groupPositions);
   window._lastAnalysis={possibleCombos,groupStatus,teamStatus,completeness,candidates,groupPositions,mode};
 
+  // Cache each group's per-group result so unchanged groups skip re-simulation next run.
+  if(candidates){
+    for(const g of GROUPS){
+      if(candidates[g]&&groupPositions[g]) window._groupCache[cacheKeyFor(g,mode)]={candidates:candidates[g],positions:groupPositions[g]};
+    }
+  }
+
   const res=document.getElementById('res');
   res.style.display='block';
   res.classList.add('analyzed');
@@ -256,19 +293,19 @@ function showResults(analysis,candidates,completeness){
     const box=document.getElementById('c_'+g),gc=candidates[g];
     if(gc&&gc.length){
       box.style.display='block';const ic=completeness[g];
-      const fgd=v=>v>40?'\u221e':v<-40?'-\u221e':(v>=0?'+':'')+v,fgf=v=>v>40?'\u221e':''+v;
+      const fgd=v=>v>40?'\u221e':v<-40?'-\u221e':(v>=0?'+':'')+v,fgf=v=>v>40?'\u221e':''+v,fc=v=>v>40?'\u221e':''+v;
       let h=`<div class="ct">${ic?'3rd Place Team':'Possible 3rd Place Finishers'}</div>`;
       for(const c of gc){
         const ts=teamStatus[c.name]||'TBD',tcol=ts==='GUARANTEED_TOP8'?'var(--grn)':ts==='GUARANTEED_BOTTOM4'?'var(--red)':'var(--amb)',tlab=ts==='GUARANTEED_TOP8'?'\u2713 ADVANCED':ts==='GUARANTEED_BOTTOM4'?'\u2717 ELIMINATED':'? TBD';
-        h+=`<div class="cd"><div class="ch"><span class="cn">${c.flag} ${c.name}</span>`;
+        h+=`<div class="cd"><div class="ch"><span class="cn">${c.flag} ${c.name} <span style="color:var(--t3);font-weight:400">(FIFA ranking: ${c.fifaRank})</span></span>`;
         h+=`<span class="cs" style="color:${tcol}">${tlab}</span>`;
         h+=`</div><div class="cv">`;
         if(isWDL){
           h+=`Best: ${c.best.pts}p`;
           if(c.best.pts!==c.worst.pts)h+=` | Worst: ${c.worst.pts}p`;
         }else{
-          h+=`Best: ${c.best.pts}p ${fgd(c.best.gd)}gd ${fgf(c.best.gf)}gf`;
-          if(!ic)h+=` | Worst: ${c.worst.pts}p ${fgd(c.worst.gd)}gd ${fgf(c.worst.gf)}gf`;
+          h+=`Best: ${c.best.pts}p ${fgd(c.best.gd)}gd ${fgf(c.best.gf)}gf ${fc(c.best.conduct)}c`;
+          if(!ic)h+=` | Worst: ${c.worst.pts}p ${fgd(c.worst.gd)}gd ${fgf(c.worst.gf)}gf ${fc(c.worst.conduct)}c`;
         }
         h+=`</div></div>`;
       }
@@ -401,10 +438,19 @@ function exportData(){
       });
     }
   }
+  // Include precomputed per-group results for the current data so a re-run
+  // (or a fresh load that imports this) skips simulation.
+  const cache={};
+  for(const gr of GROUPS)for(const mode of ['regular','wdl']){
+    const key=cacheKeyFor(gr,mode);
+    if(window._groupCache && window._groupCache[key])cache[key]=window._groupCache[key];
+  }
+  if(Object.keys(cache).length)data._cache=cache;
   document.getElementById('exportBox').value=JSON.stringify(data,null,2);
 }
 // Apply a data object (export/import JSON shape) to the input boxes.
 function applyData(data){
+  if(data && data._cache){ window._groupCache=window._groupCache||{}; Object.assign(window._groupCache, data._cache); }
   for(const gr of GROUPS){
     if(!data[gr])continue;
     for(let md=1;md<=3;md++){

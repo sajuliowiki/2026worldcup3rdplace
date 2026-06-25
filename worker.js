@@ -138,7 +138,20 @@ function simulateGroupRegular(group, playedMatches, isComplete) {
     }
   }
 
-  return {candidates: Object.values(candidates), positions: positionsObj(posMask)};
+  // Worst-case conduct is unbounded for any team that can still play (it could
+  // pick up unlimited disciplinary points in its remaining match); best-case
+  // conduct is the current total (it can't un-receive cards). The scoreline
+  // simulation itself sets simulated-match conduct to 0, so we apply this here.
+  const md3conduct = MATCH_SCHEDULE[3];
+  const canStillPlay = new Set();
+  if (!m0Played) { canStillPlay.add(md3conduct[0][0]); canStillPlay.add(md3conduct[0][1]); }
+  if (!m1Played) { canStillPlay.add(md3conduct[1][0]); canStillPlay.add(md3conduct[1][1]); }
+  const result = Object.values(candidates);
+  for (const c of result) {
+    const idx = TEAMS[group].findIndex(t => t.name === c.name);
+    if (canStillPlay.has(idx)) c.worst = {...c.worst, conduct: 999}; // 999 => ∞ (past INF_THRESHOLD)
+  }
+  return {candidates: result, positions: positionsObj(posMask)};
 }
 
 function positionsObj(posMask) {
@@ -168,6 +181,11 @@ function simulateGroupWDL(group, playedMatches) {
   const posMask = {};
   const third = {}; // name -> {name,flag,pos,fifaRank,best,worst}
 
+  // A team's goal difference is "determined" once it has no unplayed fixtures.
+  const nonDet = new Set();
+  for (const f of unplayed) { nonDet.add(f.home); nonDet.add(f.away); }
+  const isDet = idx => !nonDet.has(idx);
+
   for (let s = 0; s < total; s++) {
     let n = s;
     const sims = [];
@@ -184,7 +202,7 @@ function simulateGroupWDL(group, playedMatches) {
     }
     const all = playedMatches.concat(sims);
     const stats = computeStats(group, all);
-    const ranking = rankGroupWDL(stats);
+    const ranking = rankGroupWDL(stats, isDet);
     accumulatePositions(ranking, stats, posMask);
 
     // 3rd-place candidates: any team whose block spans position 3.
@@ -268,110 +286,12 @@ function cmp3rdWDL(a, b) {
 
 // ============ CROSS-GROUP ANALYSIS ============
 
-function analyzeAll(groupCandidates, rankCmp, statsDiffer) {
-  rankCmp = rankCmp || cmp3rd;
-  statsDiffer = statsDiffer || function (a, b) { return cmpStatNormalized(a, b) !== 0; };
-
-  const scenarios = {};
-  for (const g of GROUPS) {
-    const cands = groupCandidates[g] || [];
-    const sc = [];
-    for (const c of cands) {
-      sc.push({group: g, name: c.name, flag: c.flag, pos: c.pos, stat: c.best, type: 'best'});
-      if (statsDiffer(c.best, c.worst)) {
-        sc.push({group: g, name: c.name, flag: c.flag, pos: c.pos, stat: c.worst, type: 'worst'});
-      }
-    }
-    if (sc.length === 0) {
-      sc.push({group: g, name: '?', flag: '?', pos: g+'?',
-        stat: {pts:0,gd:0,gf:0,conduct:0,fifaRank:100}, type: 'default'});
-    }
-    scenarios[g] = sc;
-  }
-
-  const possibleCombos = new Set();
-  const groupCanAdvance = {}, groupMustAdvance = {};
-  const teamCanAdvance = {}, teamMustAdvance = {};
-  for (const g of GROUPS) { groupCanAdvance[g] = false; groupMustAdvance[g] = true; }
-
-  let totalEvals = 0;
-  let totalCombos = 1;
-  for (const g of GROUPS) totalCombos *= scenarios[g].length;
-
-  const scenarioArrays = GROUPS.map(g => scenarios[g]);
-  const indices = new Array(12).fill(0);
-  const lengths = scenarioArrays.map(a => a.length);
-
-  let done = false, progressCounter = 0;
-  const progressInterval = Math.max(1, Math.floor(totalCombos / 20));
-
-  while (!done) {
-    const current = indices.map((idx, gi) => scenarioArrays[gi][idx]);
-    const sorted = [...current].sort((a, b) => rankCmp(a.stat, b.stat));
-
-    let pos = 0;
-    const definiteTop8 = new Set(), ambiguous = new Set();
-    let i = 0;
-    while (i < sorted.length) {
-      let j = i + 1;
-      while (j < sorted.length && rankCmp(sorted[i].stat, sorted[j].stat) === 0) j++;
-      if (pos + (j - i) <= 8) { for (let k = i; k < j; k++) definiteTop8.add(sorted[k].group); }
-      else if (pos < 8) { for (let k = i; k < j; k++) ambiguous.add(sorted[k].group); }
-      pos += (j - i); i = j;
-    }
-
-    if (ambiguous.size === 0) {
-      const key = [...definiteTop8].sort().join('');
-      possibleCombos.add(key);
-      for (const g of GROUPS) { if (definiteTop8.has(g)) groupCanAdvance[g] = true; else groupMustAdvance[g] = false; }
-      for (const s of current) {
-        if (!teamCanAdvance[s.name]) { teamCanAdvance[s.name] = false; teamMustAdvance[s.name] = true; }
-        if (definiteTop8.has(s.group)) teamCanAdvance[s.name] = true; else teamMustAdvance[s.name] = false;
-      }
-    } else {
-      const slotsLeft = 8 - definiteTop8.size;
-      const subsets = getSubsets([...ambiguous], slotsLeft);
-      for (const sub of subsets) {
-        const top8 = new Set([...definiteTop8, ...sub]);
-        const key = [...top8].sort().join('');
-        possibleCombos.add(key);
-        for (const g of GROUPS) { if (top8.has(g)) groupCanAdvance[g] = true; else groupMustAdvance[g] = false; }
-        for (const s of current) {
-          if (!teamCanAdvance[s.name]) { teamCanAdvance[s.name] = false; teamMustAdvance[s.name] = true; }
-          if (top8.has(s.group)) teamCanAdvance[s.name] = true; else teamMustAdvance[s.name] = false;
-        }
-      }
-    }
-
-    totalEvals++;
-    progressCounter++;
-    if (progressCounter >= progressInterval) {
-      progressCounter = 0;
-      self.postMessage({type: 'progress', pct: Math.round(totalEvals / totalCombos * 100)});
-    }
-
-    let carry = true;
-    for (let gi = 11; gi >= 0 && carry; gi--) {
-      indices[gi]++;
-      if (indices[gi] < lengths[gi]) carry = false;
-      else indices[gi] = 0;
-    }
-    if (carry) done = true;
-  }
-
-  const groupStatus = {}, teamStatus = {};
-  for (const g of GROUPS) {
-    if (groupCanAdvance[g] && groupMustAdvance[g]) groupStatus[g] = 'GUARANTEED_TOP8';
-    else if (!groupCanAdvance[g]) groupStatus[g] = 'GUARANTEED_BOTTOM4';
-    else groupStatus[g] = 'TBD';
-  }
-  for (const name in teamCanAdvance) {
-    if (teamCanAdvance[name] && teamMustAdvance[name]) teamStatus[name] = 'GUARANTEED_TOP8';
-    else if (!teamCanAdvance[name]) teamStatus[name] = 'GUARANTEED_BOTTOM4';
-    else teamStatus[name] = 'TBD';
-  }
-  return { possibleCombos: [...possibleCombos], groupStatus, teamStatus, totalEvals,
-           teamCanAdvance, teamMustAdvance };
+// analyzeAll is retained as a thin wrapper over the corner method (analyzeAllFast),
+// which is exact, far faster, and fixes a per-team boundary-tie bug in the old
+// Cartesian-product implementation. The rankCmp/statsDiffer params are ignored
+// (regular mode only; WDL uses analyzeAllWDL).
+function analyzeAll(groupCandidates) {
+  return analyzeAllFast(groupCandidates);
 }
 
 function getSubsets(arr, k) {
@@ -384,6 +304,80 @@ function getSubsets(arr, k) {
   }
   helper(0, []);
   return result;
+}
+
+// ============ CROSS-GROUP ANALYSIS (corner method) ============
+// Equivalent to analyzeAll() but without the Cartesian product. Because top-8
+// membership is a monotonic threshold, every verdict and every possible
+// combination is decided at the extreme corners, so each group collapses to a
+// single best / single worst third-place stat line. O(495 + teams*12) instead
+// of O(product of per-group entry counts).
+function analyzeAllFast(groupCandidates) {
+  const gBest = {}, gWorst = {};
+  for (const g of GROUPS) {
+    const cands = groupCandidates[g] || [];
+    if (cands.length === 0) {
+      gBest[g]  = {pts:9, gd:999, gf:999, conduct:0,    fifaRank:100};
+      gWorst[g] = {pts:0, gd:-999, gf:0,  conduct:9999, fifaRank:100};
+      continue;
+    }
+    let b = cands[0].best, w = cands[0].worst;
+    for (const c of cands) {
+      if (cmp3rd(c.best, b) < 0) b = c.best;    // c.best ranks higher
+      if (cmp3rd(c.worst, w) > 0) w = c.worst;  // c.worst ranks lower
+    }
+    gBest[g] = b; gWorst[g] = w;
+  }
+
+  // Possible 8-group combinations: C is achievable iff, with C at best and the
+  // rest at worst, all of C outranks all of non-C — i.e. the weakest C-best is
+  // not strictly out-ranked by the strongest non-C-worst.
+  const possibleCombos = new Set();
+  for (const C of getSubsets(GROUPS.slice(), 8)) {
+    const inC = new Set(C);
+    let cMinBest = null;       // worst-ranked "best" inside C
+    for (const g of C) { if (cMinBest === null || cmp3rd(gBest[g], cMinBest) > 0) cMinBest = gBest[g]; }
+    let dMaxWorst = null;      // best-ranked "worst" outside C
+    for (const g of GROUPS) { if (!inC.has(g) && (dMaxWorst === null || cmp3rd(gWorst[g], dMaxWorst) < 0)) dMaxWorst = gWorst[g]; }
+    if (cmp3rd(dMaxWorst, cMinBest) >= 0) possibleCombos.add(C.slice().sort().join(''));
+  }
+
+  // Group verdicts.
+  const groupStatus = {};
+  for (const g of GROUPS) {
+    let blockMust = 0, blockCan = 0;
+    for (const h of GROUPS) {
+      if (h === g) continue;
+      if (cmp3rd(gBest[h], gWorst[g]) <= 0) blockMust++;  // h (best) can sit at/above g (worst)
+      if (cmp3rd(gWorst[h], gBest[g]) < 0) blockCan++;    // h (worst) always above g (best)
+    }
+    const mustAdvance = blockMust <= 7;
+    const canAdvance = blockCan <= 7;
+    if (canAdvance && mustAdvance) groupStatus[g] = 'GUARANTEED_TOP8';
+    else if (!canAdvance) groupStatus[g] = 'GUARANTEED_BOTTOM4';
+    else groupStatus[g] = 'TBD';
+  }
+
+  // Per-team verdicts: each team's own best/worst against the OTHER groups'
+  // overall best/worst (the envelope over every third-placer that group could
+  // send — which is exactly the single group best/worst).
+  const teamStatus = {};
+  for (const g of GROUPS) {
+    for (const c of (groupCandidates[g] || [])) {
+      let blockMust = 0, blockCan = 0;
+      for (const h of GROUPS) {
+        if (h === g) continue;
+        if (cmp3rd(gBest[h], c.worst) <= 0) blockMust++;
+        if (cmp3rd(gWorst[h], c.best) < 0) blockCan++;
+      }
+      const can = blockCan <= 7, must = blockMust <= 7;
+      if (can && must) teamStatus[c.name] = 'GUARANTEED_TOP8';
+      else if (!can) teamStatus[c.name] = 'GUARANTEED_BOTTOM4';
+      else teamStatus[c.name] = 'TBD';
+    }
+  }
+
+  return { possibleCombos: [...possibleCombos], groupStatus, teamStatus, totalEvals: 0 };
 }
 
 // Per-team third-place route verdict for WDL mode.
@@ -552,8 +546,9 @@ self.onmessage = function(e) {
   const {type, data} = e.data;
   if (type !== 'analyze') return;
 
-  const {matchData, completeness, mode} = data;
+  const {matchData, completeness, mode, cached} = data;
   const isWDL = mode === 'wdl';
+  const cache = cached || {};
   self.postMessage({type: 'progress', pct: 0, msg: 'Starting analysis...'});
 
   const groupCandidates = {};
@@ -561,8 +556,17 @@ self.onmessage = function(e) {
 
   for (let gi = 0; gi < GROUPS.length; gi++) {
     const g = GROUPS[gi];
-    self.postMessage({type: 'progress', pct: Math.round(gi / 12 * 50), msg: 'Simulating Group ' + g + (isWDL ? ' (W/D/L)' : '') + '...'});
     const played = matchData[g] || [];
+
+    // Reuse a cached result when this group's data (and mode) is unchanged.
+    if (cache[g] && cache[g].candidates && cache[g].positions) {
+      self.postMessage({type: 'progress', pct: Math.round(gi / 12 * 50), msg: 'Group ' + g + ' (cached)'});
+      groupCandidates[g] = cache[g].candidates;
+      groupPositions[g] = cache[g].positions;
+      continue;
+    }
+
+    self.postMessage({type: 'progress', pct: Math.round(gi / 12 * 50), msg: 'Simulating Group ' + g + (isWDL ? ' (W/D/L)' : '') + '...'});
 
     if (isWDL) {
       const r = simulateGroupWDL(g, played);
