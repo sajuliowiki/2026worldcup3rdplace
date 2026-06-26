@@ -79,12 +79,14 @@ var PREFILL_DATA = {
     "md3_m1": { "hg": 4, "ag": 2, "hc": 0,  "ac": 3  }, // Morocco 4–2 Haiti
   },
 
-  // ---- GROUP D  (United States, Paraguay, Australia, Turkey) ----
+// ---- GROUP D  (United States, Paraguay, Australia, Turkey) ----
   "D": {
     "md1_m0": { "hg": 4, "ag": 1, "hc": 1,  "ac": 5  }, // United States 4–1 Paraguay
     "md1_m1": { "hg": 2, "ag": 0, "hc": 0,  "ac": 1  }, // Australia 2–0 Turkey
     "md2_m0": { "hg": 2, "ag": 0, "hc": 3,  "ac": 4  }, // United States 2–0 Australia
-    "md2_m1": { "hg": 0, "ag": 1, "hc": 2,  "ac": 6  }  // Turkey 0–1 Paraguay
+    "md2_m1": { "hg": 0, "ag": 1, "hc": 2,  "ac": 6  }, // Turkey 0–1 Paraguay
+    "md3_m0": { "hg": 3, "ag": 2, "hc": 0,  "ac": 1  }, // Turkey 3–2 United States
+    "md3_m1": { "hg": 0, "ag": 0, "hc": 1,  "ac": 1  }  // Paraguay 0–0 Australia
   },
 
   // ---- GROUP E  (Germany, Curaçao, Ivory Coast, Ecuador) ----
@@ -92,7 +94,9 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 7, "ag": 1, "hc": 0,  "ac": 0  }, // Germany 7–1 Curaçao
     "md1_m1": { "hg": 1, "ag": 0, "hc": 3,  "ac": 1  }, // Ivory Coast 1–0 Ecuador
     "md2_m0": { "hg": 2, "ag": 1, "hc": 0,  "ac": 0  }, // Germany 2–1 Ivory Coast
-    "md2_m1": { "hg": 0, "ag": 0, "hc": 1,  "ac": 5  }  // Ecuador 0–0 Curaçao
+    "md2_m1": { "hg": 0, "ag": 0, "hc": 1,  "ac": 5  }, // Ecuador 0–0 Curaçao
+    "md3_m0": { "hg": 2, "ag": 1, "hc": 3,  "ac": 1  }, // Ecuador 2–1 Germany
+    "md3_m1": { "hg": 0, "ag": 2, "hc": 2,  "ac": 1  }  // Curaçao 0–2 Ivory Coast
   },
 
   // ---- GROUP F  (Netherlands, Japan, Sweden, Tunisia) ----
@@ -100,7 +104,9 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 2, "ag": 2, "hc": 3,  "ac": 0  }, // Netherlands 2–2 Japan
     "md1_m1": { "hg": 5, "ag": 1, "hc": 0,  "ac": 1  }, // Sweden 5–1 Tunisia
     "md2_m0": { "hg": 5, "ag": 1, "hc": 0,  "ac": 3  }, // Netherlands 5–1 Sweden
-    "md2_m1": { "hg": 0, "ag": 4, "hc": 0,  "ac": 0  }  // Tunisia 0–4 Japan
+    "md2_m1": { "hg": 0, "ag": 4, "hc": 0,  "ac": 0  }, // Tunisia 0–4 Japan
+    "md3_m0": { "hg": 1, "ag": 3, "hc": 0,  "ac": 0  }, // Tunisia 1–3 Netherlands
+    "md3_m1": { "hg": 1, "ag": 1, "hc": 1,  "ac": 2  }  // Japan 1–1 Sweden
   },
 
   // ---- GROUP G  (Belgium, Egypt, Iran, New Zealand) ----
