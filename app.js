@@ -143,13 +143,14 @@ function renderLive3rdPlace(){
 }
 
 // ========== LOCK TOGGLE ==========
-document.getElementById('lock').addEventListener('change',function(){
-  const lk=this.checked;
+function applyLock(){
+  const lk=document.getElementById('lock').checked;
   for(const gr of GROUPS)for(let md=1;md<=2;md++)SCHED[md].forEach((_,mi)=>{
     const id=`${gr}_${md}_${mi}`;
     ['hg_','ag_','hc_','ac_'].forEach(p=>{const el=document.getElementById(p+id);if(el)el.disabled=lk;});
   });
-});
+}
+document.getElementById('lock').addEventListener('change',applyLock);
 function clearAll(){
   document.querySelectorAll('.si').forEach(el=>{el.value='';el.disabled=false;});
   document.querySelectorAll('.ci').forEach(el=>{el.value='0';el.disabled=false;});
@@ -396,6 +397,26 @@ function randomConduct(){
 }
 function generateRandom(){
   const mode=document.getElementById('rngMode').value;
+
+  // Special mode: fill ONLY Matchday 3 fixtures that are currently empty, and
+  // leave everything else (including already-entered MD3 results) untouched.
+  if(mode==='md3empty'){
+    let filled=0;
+    for(const gr of GROUPS){
+      SCHED[3].forEach((_,mi)=>{
+        const id=`${gr}_3_${mi}`;
+        const hgEl=document.getElementById('hg_'+id),agEl=document.getElementById('ag_'+id),hcEl=document.getElementById('hc_'+id),acEl=document.getElementById('ac_'+id);
+        if(hgEl.disabled)return;
+        if(hgEl.value===''||agEl.value===''){hgEl.value=weightedRandomScore();agEl.value=weightedRandomScore();hcEl.value=randomConduct();acEl.value=randomConduct();filled++;}
+      });
+    }
+    invalidateAnalysis();
+    GROUPS.forEach(renderGroupStandings);
+    renderLive3rdPlace();
+    if(!filled)alert('No empty Matchday 3 fixtures to fill — every MD3 match already has a score.');
+    return;
+  }
+
   const countVal=Math.max(1,Math.min(12,parseInt(document.getElementById('rngCount').value)||4));
   const randomSubset=n=>new Set([...GROUPS].sort(()=>Math.random()-0.5).slice(0,n));
 
@@ -485,6 +506,9 @@ window.addEventListener('load',function(){
       applyData(PREFILL_DATA);
     }
   }catch(e){console.error('Prefill failed:',e);}
+  // Apply the (default-ticked) MD1&2 lock AFTER prefill so prefilled MD1&2
+  // scores still populate before those inputs are disabled.
+  applyLock();
 });
 function downloadData(){
   exportData();

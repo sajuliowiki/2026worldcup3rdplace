@@ -133,10 +133,10 @@ header p{color:var(--t3);font-size:12px}
 <p>Analyze which third-placed teams advance to the Round of 32</p>
 </header>
 <div class="ctrl">
-<label><input type="checkbox" id="lock"> Lock Matchdays 1 &amp; 2</label>
+<label><input type="checkbox" id="lock" checked> Lock Matchdays 1 &amp; 2</label>
 <span class="modesel" title="Full scorelines simulates every possible MD3 result (needs ≥1 MD3 game played). Win/Draw/Loss only simulates match outcomes — fast, works from Matchday 2 onward, best for spotting teams that have already advanced.">
 <label><input type="radio" name="simMode" value="regular" checked> Full scorelines</label>
-<label><input type="radio" name="simMode" value="wdl"> Win/Draw/Loss (fast, for use on MD2)</label>
+<label><input type="radio" name="simMode" value="wdl"> Win/Draw/Loss (fast)</label>
 </span>
 <button class="btn bp" id="runBtn" onclick="run()">▶ Run Analysis</button>
 <button class="btn bs" onclick="clearAll()">Clear All</button>
@@ -155,6 +155,7 @@ header p{color:var(--t3);font-size:12px}
 <option value="md12" selected>Matchdays 1 &amp; 2 only</option>
 <option value="md12plus">MD 1&amp;2 + some MD3 groups</option>
 <option value="all">All 3 matchdays</option>
+<option value="md3empty">Empty MD3 fixtures only</option>
 </select>
 </label>
 </div>
@@ -203,6 +204,8 @@ header p{color:var(--t3);font-size:12px}
 <div style="margin:10px 0 4px;display:flex;align-items:center"><h3 style="font-size:12px;color:var(--t2);margin:0">Combinations Table</h3><button class="copy-btn" onclick="copyWikiBox('wikiCombos')">📋 Copy</button></div>
 <textarea class="export-box" id="wikiCombos" rows="4" placeholder="Click 'Generate All Wikitext'..."></textarea>
 
+<div style="margin:10px 0 4px;display:flex;align-items:center"><h3 style="font-size:12px;color:var(--t2);margin:0">Qualified Teams Table</h3><button class="copy-btn" onclick="copyWikiBox('wikiQualified')">📋 Copy</button></div>
+<textarea class="export-box" id="wikiQualified" rows="6" placeholder="Click 'Generate All Wikitext'..."></textarea>
 <div style="margin:10px 0 4px;display:flex;align-items:center"><h3 style="font-size:12px;color:var(--t2);margin:0">Football Boxes (R32 Matches)</h3><button class="copy-btn" onclick="copyWikiBox('wikiBoxes')">📋 Copy</button></div>
 <textarea class="export-box" id="wikiBoxes" rows="6" placeholder="Click 'Generate All Wikitext'..."></textarea>
 

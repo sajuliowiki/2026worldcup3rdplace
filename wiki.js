@@ -34,6 +34,17 @@ const FIFA_TITLE_NAMES={
 };
 function fifaTitleName(name){return FIFA_TITLE_NAMES[name]||name;}
 
+// Display-name overrides for R32 wikitext output (headings, score links,
+// references). The app's roster name differs from the article's preferred name.
+const WIKI_DISPLAY_NAMES={"Bosnia-Herzegovina":"Bosnia and Herzegovina"};
+function wikiDisplayName(name){return WIKI_DISPLAY_NAMES[name]||name;}
+
+// Current date in US Pacific Time, "Month D, YYYY" (e.g. "June 25, 2026"),
+// for football-box "Retrieved" reference dates.
+function retrievedDate(){
+  return new Date().toLocaleDateString('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'long',day:'numeric'});
+}
+
 // ========== STANDINGS CACHE ==========
 function computeStandingsCache(completeness) {
   const cache = {};
@@ -81,7 +92,7 @@ function resolveTeamWiki(desc, slot, slotPossible, standingsCache, completeness,
 
   function fill(name) {
     const code = FIFA_CODES[name] || 'CODE';
-    return {wiki:`{{#invoke:flag|${fbTag}|${code}}}`, plain:name, confirmed:true};
+    return {wiki:`{{#invoke:flag|${fbTag}|${code}}}`, plain:wikiDisplayName(name), confirmed:true};
   }
 
   if (desc === '3rd') {
@@ -341,10 +352,10 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
     const refName1=r1.confirmed?fifaTitleName(r1.plain):t1code;
     const refName2=r2.confirmed?fifaTitleName(r2.plain):t2code;
     const refTitle=`${refName1} vs ${refName2} {{!}} Round of 32 {{!}} FIFA World Cup 2026`;
-    const report=`|report=<ref group="Report">[${REF_BASE}${m.refId} "${refTitle}"]. FIFA. Retrieved May 1, 2026.</ref>`;
+    const report=`|report=<ref group="Report">[${REF_BASE}${m.refId} "${refTitle}"]. FIFA. Retrieved ${retrievedDate()}.</ref>`;
 
     L.push(`===${heading}===`);
-    L.push(`<section begin=R32-${matches.indexOf(m)+1} />{{#invoke:Football box|main`);
+    L.push(`<section begin=~~"~~R32-${matches.indexOf(m)+1}~~"~~ />{{#invoke:Football box|main`);
     L.push(`|date={{Start date|2026|${m.date}}}`);
     L.push(`|time=${m.time} [[${m.tz}]]`);
     L.push(`|team1=${r1.wiki}`);
@@ -356,7 +367,7 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
     L.push('|attendance=');
     L.push('|referee=');
     L.push(report);
-    L.push(`}}<section end=R32-${matches.indexOf(m)+1} />`);
+    L.push(`}}<section end=~~"~~R32-${matches.indexOf(m)+1}~~"~~ />`);
     L.push('');
   }
   return L.join('\n');
@@ -394,7 +405,7 @@ function generateBracketWiki(pSet, standingsCache, completeness) {
   L.push('==Bracket==');
   L.push('The tournament bracket is shown below, with bold denoting the winners of each match.');
   L.push('');
-  L.push('<section begin=Bracket />{{#invoke:RoundN|N32');
+  L.push('<section begin=~~"~~Bracket~~"~~ />{{#invoke:RoundN|N32');
   L.push('|style=white-space:nowrap|widescore=yes|bold_winner=high|3rdplace=yes');
   L.push('|RD1=[[#Round of 32|Round of 32]]');
   L.push('|RD2=[[#Round of 16|Round of 16]]');
@@ -432,7 +443,7 @@ function generateBracketWiki(pSet, standingsCache, completeness) {
   L.push('|July 19 – [[East Rutherford, New Jersey|East Rutherford]]|<!--{{#invoke:flag|fb|}}-->Winner Match 101||<!--{{#invoke:flag|fb|}}-->Winner Match 102|');
   L.push('<!--Match for third place-->');
   L.push('|July 18 – [[Miami Gardens, Florida|Miami Gardens]]|<!--{{#invoke:flag|fb|}}-->Loser Match 101||<!--{{#invoke:flag|fb|}}-->Loser Match 102|');
-  L.push('}}<section end=Bracket />');
+  L.push('}}<section end=~~"~~Bracket~~"~~ />');
   return L.join('\n');
 }
 
@@ -451,7 +462,7 @@ function copyWikiBox(id) {
 // ========== MAIN EXPORT (post-analysis full render) ==========
 function generateAllWiki() {
   if (!window._lastAnalysis) return;
-  const {possibleCombos, groupStatus, completeness, candidates, mode} = window._lastAnalysis;
+  const {possibleCombos, groupStatus, teamStatus, completeness, candidates, groupPositions, mode} = window._lastAnalysis;
   const pSet = new Set(possibleCombos);
   _securedPos = window._secured || {};
   const standingsCache = computeStandingsCache(completeness);
@@ -464,8 +475,78 @@ function generateAllWiki() {
 
   document.getElementById('wikiThirdPlace').value = generateThirdPlaceTableWiki(standingsCache, completeness, groupStatus);
   document.getElementById('wikiCombos').value = generateCombosTableWiki(pSet);
+  document.getElementById('wikiQualified').value = generateQualifiedTeamsWiki(groupPositions, groupStatus, teamStatus, completeness);
   document.getElementById('wikiBoxes').value = generateFootballBoxesWiki(pSet, standingsCache, completeness);
   document.getElementById('wikiBracket').value = generateBracketWiki(pSet, standingsCache, completeness);
+}
+
+// =====================================================================
+// QUALIFIED TEAMS TABLE
+// =====================================================================
+// Winners / Runners-up / Third columns show teams whose POSITION is secured
+// (third shows {{N/a}} when the group is confirmed not to send a best-eight
+// third). The optional "Qualified (position TBD)" column lists teams that have
+// mathematically advanced but whose final position isn't locked yet; it is
+// omitted entirely when no such team exists anywhere.
+function generateQualifiedTeamsWiki(groupPositions, groupStatus, teamStatus, completeness){
+  const sec = _securedPos || {};
+  const fb = name => `{{#invoke:flag|fb|${FIFA_CODES[name]||'CODE'}}}`;
+  const PH = '<!--{{#invoke:flag|fb|}}-->';
+  const allComplete = GROUPS.every(g => completeness[g]);
+
+  // A team has qualified iff it can never finish 4th AND (it can't finish 3rd,
+  // or — if it can — it's a guaranteed best-eight third). Covers both modes.
+  function qualified(g, name){
+    const P = (groupPositions[g] && groupPositions[g][name]) || [1,2,3,4];
+    if (P.indexOf(4) !== -1) return false;
+    if (P.indexOf(3) === -1) return true;
+    return teamStatus[name] === 'GUARANTEED_TOP8';
+  }
+  function securedPos(g, name){
+    const P = groupPositions[g] && groupPositions[g][name];
+    return (P && P.length === 1) ? P[0] : 0;
+  }
+
+  // Teams qualified but with no locked position -> the TBD column.
+  const tbd = {};
+  let anyTBD = false;
+  for (const g of GROUPS){
+    tbd[g] = (TEAMS[g] || []).filter(t => securedPos(g, t.name) === 0 && qualified(g, t.name)).map(t => t.name);
+    if (tbd[g].length) anyTBD = true;
+  }
+
+  const L = [];
+  L.push('==Qualified teams==');
+  L.push(`The top two teams from each of the twelve groups, along with the eight best-ranked third-placed teams, ${allComplete ? 'qualified' : 'will qualify'} for the knockout stage.<ref name="regulations"/>`);
+  L.push('<section begin="Qualified teams" />');
+  L.push('{| class="wikitable" style="white-space:nowrap;"');
+  L.push('|-');
+  L.push('! Group');
+  L.push('! style="width:150px" | Winners');
+  L.push('! style="width:150px" | Runners-up');
+  L.push('! style="width:150px" | Third-placed teams<br />([[2026 FIFA World Cup#Ranking of third-placed teams|Best eight]] qualify)');
+  if (anyTBD) L.push('! style="width:150px" | Qualified<br />(position TBD)');
+
+  for (const g of GROUPS){
+    L.push('|-');
+    L.push(`! [[2026 FIFA World Cup Group ${g}|${g}]]`);
+    L.push(`| ${sec[g] && sec[g][1] ? fb(sec[g][1]) : PH}`);
+    L.push(`| ${sec[g] && sec[g][2] ? fb(sec[g][2]) : PH}`);
+    let third;
+    if (groupStatus[g] === 'GUARANTEED_BOTTOM4') third = '{{N/a}}';
+    else if (sec[g] && sec[g][3]) third = fb(sec[g][3]);
+    else third = PH;
+    L.push(`| ${third}`);
+    if (anyTBD){
+      if (tbd[g].length) L.push(`| ${tbd[g].map(fb).join('<br>')}`);
+      else {
+        const resolved = (sec[g] && (sec[g][1] || sec[g][2] || sec[g][3])) || groupStatus[g] === 'GUARANTEED_BOTTOM4';
+        L.push(resolved ? '|' : `| ${PH}`);
+      }
+    }
+  }
+  L.push('|}<section end="Qualified teams" />');
+  return L.join('\n');
 }
 
 // Compare stat for best/worst (higher = better)
