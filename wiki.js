@@ -263,7 +263,7 @@ function generateCombosTableWiki(pSet) {
 
   const legendInner = possCount===1
     ? 'Combination according to the eight qualified teams'
-    : 'Combinations which are still possible<!--Combination according to the eight qualified teams-->';
+    : `Combinations which are still possible — ${possCount} of 495 ({{percentage|${possCount}|495|2|pad=yes}})`;
 
   const L=[];
   L.push(`{{legend|#BBF3BB|${legendInner}}}`);
@@ -355,7 +355,7 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
     const report=`|report=<ref group="Report">[${REF_BASE}${m.refId} "${refTitle}"]. FIFA. Retrieved ${retrievedDate()}.</ref>`;
 
     L.push(`===${heading}===`);
-    L.push(`<section begin=~~"~~R32-${matches.indexOf(m)+1}~~"~~ />{{#invoke:Football box|main`);
+    L.push(`<section begin="R32-${matches.indexOf(m)+1}" />{{#invoke:Football box|main`);
     L.push(`|date={{Start date|2026|${m.date}}}`);
     L.push(`|time=${m.time} [[${m.tz}]]`);
     L.push(`|team1=${r1.wiki}`);
@@ -367,7 +367,7 @@ function generateFootballBoxesWiki(pSet, standingsCache, completeness) {
     L.push('|attendance=');
     L.push('|referee=');
     L.push(report);
-    L.push(`}}<section end=~~"~~R32-${matches.indexOf(m)+1}~~"~~ />`);
+    L.push(`}}<section end="R32-${matches.indexOf(m)+1}" />`);
     L.push('');
   }
   return L.join('\n');
@@ -405,7 +405,7 @@ function generateBracketWiki(pSet, standingsCache, completeness) {
   L.push('==Bracket==');
   L.push('The tournament bracket is shown below, with bold denoting the winners of each match.');
   L.push('');
-  L.push('<section begin=~~"~~Bracket~~"~~ />{{#invoke:RoundN|N32');
+  L.push('<section begin="Bracket" />{{#invoke:RoundN|N32');
   L.push('|style=white-space:nowrap|widescore=yes|bold_winner=high|3rdplace=yes');
   L.push('|RD1=[[#Round of 32|Round of 32]]');
   L.push('|RD2=[[#Round of 16|Round of 16]]');
@@ -443,7 +443,7 @@ function generateBracketWiki(pSet, standingsCache, completeness) {
   L.push('|July 19 – [[East Rutherford, New Jersey|East Rutherford]]|<!--{{#invoke:flag|fb|}}-->Winner Match 101||<!--{{#invoke:flag|fb|}}-->Winner Match 102|');
   L.push('<!--Match for third place-->');
   L.push('|July 18 – [[Miami Gardens, Florida|Miami Gardens]]|<!--{{#invoke:flag|fb|}}-->Loser Match 101||<!--{{#invoke:flag|fb|}}-->Loser Match 102|');
-  L.push('}}<section end=~~"~~Bracket~~"~~ />');
+  L.push('}}<section end="Bracket" />');
   return L.join('\n');
 }
 
