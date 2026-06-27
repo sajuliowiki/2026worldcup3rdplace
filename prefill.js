@@ -109,12 +109,14 @@ var PREFILL_DATA = {
     "md3_m1": { "hg": 1, "ag": 1, "hc": 1,  "ac": 2  }  // Japan 1–1 Sweden
   },
 
-  // ---- GROUP G  (Belgium, Egypt, Iran, New Zealand) ----
+// ---- GROUP G  (Belgium, Egypt, Iran, New Zealand) ----
   "G": {
     "md1_m0": { "hg": 1, "ag": 1, "hc": 2,  "ac": 2  }, // Belgium 1–1 Egypt
     "md1_m1": { "hg": 2, "ag": 2, "hc": 1,  "ac": 0  }, // Iran 2–2 New Zealand
     "md2_m0": { "hg": 0, "ag": 0, "hc": 5,  "ac": 1  }, // Belgium 0–0 Iran
-    "md2_m1": { "hg": 1, "ag": 3, "hc": 2,  "ac": 1  }  // New Zealand 1–3 Egypt
+    "md2_m1": { "hg": 1, "ag": 3, "hc": 2,  "ac": 1  }, // New Zealand 1–3 Egypt
+    "md3_m0": { "hg": 1, "ag": 5, "hc": 2,  "ac": 0  }, // New Zealand 1–5 Belgium
+    "md3_m1": { "hg": 1, "ag": 1, "hc": 3,  "ac": 4  }  // Egypt 1–1 Iran
   },
 
   // ---- GROUP H  (Spain, Cape Verde, Saudi Arabia, Uruguay) ----
@@ -122,7 +124,9 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 0, "ag": 0, "hc": 1,  "ac": 1  }, // Spain 0–0 Cape Verde
     "md1_m1": { "hg": 1, "ag": 1, "hc": 1,  "ac": 0  }, // Saudi Arabia 1–1 Uruguay
     "md2_m0": { "hg": 4, "ag": 0, "hc": 0,  "ac": 2  }, // Spain 4–0 Saudi Arabia
-    "md2_m1": { "hg": 2, "ag": 2, "hc": 2,  "ac": 2  }  // Uruguay 2–2 Cape Verde
+    "md2_m1": { "hg": 2, "ag": 2, "hc": 2,  "ac": 2  }, // Uruguay 2–2 Cape Verde
+    "md3_m0": { "hg": 0, "ag": 1, "hc": 7,  "ac": 1  }, // Uruguay 0–1 Spain
+    "md3_m1": { "hg": 0, "ag": 0, "hc": 1,  "ac": 3  }  // Cape Verde 0–0 Saudi Arabia
   },
 
   // ---- GROUP I  (France, Senegal, Iraq, Norway) ----
