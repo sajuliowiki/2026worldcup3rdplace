@@ -532,15 +532,20 @@ function generateQualifiedTeamsWiki(groupPositions, groupStatus, teamStatus, com
     L.push(`! [[2026 FIFA World Cup Group ${g}|${g}]]`);
     L.push(`| ${sec[g] && sec[g][1] ? fb(sec[g][1]) : PH}`);
     L.push(`| ${sec[g] && sec[g][2] ? fb(sec[g][2]) : PH}`);
+    // Third column: {{N/a}} for groups that can't send a best-eight third;
+    // otherwise show the third only when that team's advancement is confirmed
+    // (a guaranteed best-eight third), else a placeholder.
+    const bottom4 = groupStatus[g] === 'GUARANTEED_BOTTOM4';
+    const thirdConfirmed = sec[g] && sec[g][3] && teamStatus[sec[g][3]] === 'GUARANTEED_TOP8';
     let third;
-    if (groupStatus[g] === 'GUARANTEED_BOTTOM4') third = '{{N/a}}';
-    else if (sec[g] && sec[g][3]) third = fb(sec[g][3]);
+    if (bottom4) third = '{{N/a}}';
+    else if (thirdConfirmed) third = fb(sec[g][3]);
     else third = PH;
     L.push(`| ${third}`);
     if (anyTBD){
       if (tbd[g].length) L.push(`| ${tbd[g].map(fb).join('<br>')}`);
       else {
-        const resolved = (sec[g] && (sec[g][1] || sec[g][2] || sec[g][3])) || groupStatus[g] === 'GUARANTEED_BOTTOM4';
+        const resolved = (sec[g] && (sec[g][1] || sec[g][2])) || thirdConfirmed || bottom4;
         L.push(resolved ? '|' : `| ${PH}`);
       }
     }
