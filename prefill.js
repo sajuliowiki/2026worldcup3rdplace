@@ -130,7 +130,9 @@ var PREFILL_DATA = {
     "md1_m0": { "hg": 3, "ag": 1, "hc": 0,  "ac": 0  }, // France 3–1 Senegal
     "md1_m1": { "hg": 1, "ag": 4, "hc": 1,  "ac": 0  }, // Iraq 1–4 Norway
     "md2_m0": { "hg": 3, "ag": 0, "hc": 0,  "ac": 1  }, // France 3–0 Iraq
-    "md2_m1": { "hg": 3, "ag": 2, "hc": 0,  "ac": 0  }  // Norway 3–2 Senegal
+    "md2_m1": { "hg": 3, "ag": 2, "hc": 0,  "ac": 0  }, // Norway 3–2 Senegal
+    "md3_m0": { "hg": 1, "ag": 4, "hc": 1,  "ac": 1  }, // Norway 1–3 France
+    "md3_m1": { "hg": 5, "ag": 0, "hc": 2,  "ac": 6  }  // Senegal 5–0 Iraq
   },
 
   // ---- GROUP J  (Argentina, Algeria, Austria, Jordan) ----
